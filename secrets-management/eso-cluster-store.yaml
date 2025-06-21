@@ -2,8 +2,6 @@ apiVersion: external-secrets.io/v1
 kind: ClusterSecretStore
 metadata:
   name: external-secrets
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
   provider:
     gcpsm:
