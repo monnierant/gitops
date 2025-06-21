@@ -10,7 +10,7 @@ spec:
       prune: true
       selfHeal: true
   source:
-    chart: traefik/traefik
+    chart: traefik
     repoURL: https://traefik.github.io/charts
     targetRevision: 36.1.0
     helm:
