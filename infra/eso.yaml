@@ -22,7 +22,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: eso
+  name: eso-cluster-store
   namespace: argocd
 spec:
   project: infra
