@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+data:
+  configManagementPlugins: |
+    - name: avp
+      generate:
+        command: ["argocd-vault-plugin"]
+        args: ["generate", "."]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-repo-server
+      app.kubernetes.io/part-of: argocd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argocd-repo-server
+        app.kubernetes.io/part-of: argocd
+    spec:
+      containers:
+        - name: avp
+          image: ghcr.io/argoproj-labs/argocd-vault-plugin:latest
+          command: ["/usr/local/bin/argocd-vault-plugin"]
+          args: ["server"]
+          env:
+            - name: AVP_AUTH_TYPE
+              value: "gcp"
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/creds/creds.json"
+          volumeMounts:
+            - mountPath: /creds
+              name: gcp-creds
+        - name: argocd-repo-server
+          image: quay.io/argoproj/argocd:v2.11.0 # replace with your version
+          command: [/var/run/argocd/argocd-repo-server]
+          volumeMounts:
+            - name: gcp-creds
+              mountPath: /creds
+      volumes:
+        - name: gcp-creds
+          secret:
+            secretName: gcp-sa-creds
