@@ -18,18 +18,3 @@ spec:
   destination:
     server: "https://kubernetes.default.svc"
     namespace: external-secrets
----
-apiVersion: external-secrets.io/v1
-kind: ClusterSecretStore
-metadata:
-  name: external-secrets
-spec:
-  provider:
-    gcpsm:
-      auth:
-        secretRef:
-          secretAccessKeySecretRef:
-            name: gcp-sa-secret
-            key: secret-access-credentials
-            namespace: external-secrets
-      projectID: amonnier
