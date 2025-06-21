@@ -10,7 +10,7 @@ spec:
       prune: true
       selfHeal: true
   source:
-    chart: external-secrets/external-secrets
+    chart: external-secrets
     repoURL: https://charts.external-secrets.io
     targetRevision: 0.18.0
     helm:
@@ -18,21 +18,3 @@ spec:
   destination:
     server: "https://kubernetes.default.svc"
     namespace: external-secrets
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: eso-cluster-store
-  namespace: argocd
-spec:
-  project: infra
-  source:
-    repoURL: https://github.com/monnierant/gitops
-    path: secrets-management
-    targetRevision: HEAD
-  destination:
-    server: https://kubernetes.default.svc
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
