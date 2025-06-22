@@ -9,6 +9,8 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
   source:
     chart: external-secrets
     repoURL: https://charts.external-secrets.io
