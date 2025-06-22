@@ -41,7 +41,7 @@ service:
   enabled: true
   annotations: {}
   type: LoadBalancer
-  loadBalancerIP: { { .secret.infra-traefik-loadbalancer-ip#ip } }
+  loadBalancerIP: <path:infra-secrets#ip-lb>
   externalTrafficPolicy: Local
   ports:
     web:
