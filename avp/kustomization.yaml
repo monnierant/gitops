@@ -1,8 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - https://raw.githubusercontent.com/argoproj/argo-cd/refs/tags/v3.0.9/manifests/cluster-install/kustomization.yaml
-  - cmp-plugin.yaml
-  - vault-credentials.yaml
-patches:
-  - path: argocd-repo-server.yaml
