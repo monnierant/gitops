@@ -140,12 +140,12 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name '*.yaml' ! -name '*values.yaml' | xargs -I {} grep \"<path\\|avp\\.kubernetes\\.io\" {} | grep ."
+                - "find . -name '*.yaml' | xargs -I {} grep \"<path\\|avp\\.kubernetes\\.io\" {} | grep ."
           generate:
             command:
               - sh
               - "-c"
-              - "for file in $(find . -type f -name '*.yaml' ! -name '*values.yaml' ! -path '*/statics/*'); do argocd-vault-plugin generate --verbose-sensitive-output \"$file\"; done"
+              - "for file in $(find . -type f -name '*.yaml' ! -path '*/statics/*'); do argocd-vault-plugin generate --verbose-sensitive-output \"$file\"; done"
           lockRepo: false
       avp-helm.yaml: |
         apiVersion: argoproj.io/v1alpha1
