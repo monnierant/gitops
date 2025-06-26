@@ -5,7 +5,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: <path:k8s-infra#email>
+    email: <path:infra-secrets#email>
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
@@ -21,7 +21,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: <path:k8s-infra#email>
+    email: <path:infra-secrets#email>
     privateKeySecretRef:
       name: letsencrypt-staging-key
     solvers:

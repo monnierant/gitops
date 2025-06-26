@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: cert-manager
-  namespace: cert-manager
+  namespace: argocd
 spec:
   project: infra
   syncPolicy:
@@ -18,16 +18,8 @@ spec:
     helm:
       releaseName: cert-manager
       values: |
-        installCRDs: false
+        installCRDs: true
         replicaCount: 3
-        extraArgs:
-          - --dns01-recursive-nameservers=1.1.1.1:53,9.9.9.9:53
-          - --dns01-recursive-nameservers-only
-        podDnsPolicy: None
-        podDnsConfig:
-          nameservers:
-            - 1.1.1.1
-            - 9.9.9.9
   destination:
     server: "https://kubernetes.default.svc"
     namespace: cert-manager
