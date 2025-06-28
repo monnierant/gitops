@@ -1,3 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik-external
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -28,6 +37,13 @@ spec:
           - "--certificatesresolvers.letsencrypt-prod.acme.email=<path:infra-secrets#email>"
           - "--certificatesresolvers.letsencrypt-prod.acme.storage=/data/acme.json"
           - "--certificatesresolvers.letsencrypt-prod.acme.tlschallenge=true"
+          - "--entrypoints.web.address=:80"
+          - "--entrypoints.websecure.address=:443"
+          - "--api.dashboard=true"
+          - "--providers.kubernetescrd"
+          - "--providers.kubernetesingress"
+        nodeSelector:
+          kubernetes.io/hostname: <path:infra-secrets#traefik-node-name>
         deployment:
           enabled: true
           replicas: 1
@@ -37,6 +53,11 @@ spec:
           initContainers: []
         ports:
           web:
+            port: 80
+            expose:
+              default: true
+            exposedPort: 80
+            protocol: TCP
             hostPort: 80
             # redirections:
             #   entryPoint:
@@ -44,6 +65,11 @@ spec:
             #     scheme: https        # (optionnel) force le schéma https
             #     permanent: true      # (optionnel) 308 Permanent Redirect
           websecure:
+            port: 443
+            expose:
+              default: true
+            exposedPort: 443
+            protocol: TCP
             hostPort: 443
             tls:
               enabled: true
@@ -61,10 +87,10 @@ spec:
         rbac:
           enabled: true
         service:
-          enabled: true
-          annotations: {}
-          type: LoadBalancer
-          loadBalancerIP: <path:infra-secrets#traefik-loadbalancer-ip
+          enabled: false
+          # annotations: {}
+          # type: LoadBalancer
+          # loadBalancerIP: <path:infra-secrets#traefik-loadbalancer-ip
   destination:
     server: "https://kubernetes.default.svc"
     namespace: traefik-external
