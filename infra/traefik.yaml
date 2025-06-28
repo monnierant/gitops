@@ -63,15 +63,8 @@ spec:
         service:
           enabled: true
           annotations: {}
-          type: NodePort
-          externalTrafficPolicy: Local
-          ports:
-            web:
-              port: 80
-              targetPort: web
-            websecure:
-              port: 443
-              targetPort: websecure
+          type: LoadBalancer
+          loadBalancerIP: <path:infra-secrets#traefik-loadbalancer-ip
   destination:
     server: "https://kubernetes.default.svc"
     namespace: traefik-external
