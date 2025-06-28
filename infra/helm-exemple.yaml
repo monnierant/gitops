@@ -22,11 +22,16 @@ spec:
         ingress:
           enabled: true
           hosts:
-            - host: echo.cluster.local
+            - host: echo.amonnier.fr
               paths:
-                - /
+                - / 
           annotations:
-            kubernetes.io/ingress.class: nginx
+            kubernetes.io/ingress.class: traefik-external
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            traefik.ingress.kubernetes.io/router.rule: "Host(`echo.amonnier.fr`)"
+            traefik.ingress.kubernetes.io/router.tls: "true"
+            traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+
   destination:
     server: "https://kubernetes.default.svc"
     namespace: helm-exemple-external
