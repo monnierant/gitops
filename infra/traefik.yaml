@@ -33,6 +33,7 @@ spec:
         additionalArguments:
           - "--serverstransport.insecureSkipVerify=true"
           - "--providers.kubernetescrd.allowCrossNamespace=true"
+          - "--providers.kubernetesingress.ingressendpoint.ip=<path:infra-secrets#entrypoint-ip>"
           - "--log.level=INFO"
           - "--certificatesresolvers.letsencrypt-prod.acme.email=<path:infra-secrets#email>"
           - "--certificatesresolvers.letsencrypt-prod.acme.storage=/data/acme.json"
