@@ -59,11 +59,11 @@ spec:
             exposedPort: 80
             protocol: TCP
             hostPort: 80
-            # redirections:
-            #   entryPoint:
-            #     to: websecure        # nom de l’entryPoint cible
-            #     scheme: https        # (optionnel) force le schéma https
-            #     permanent: true      # (optionnel) 308 Permanent Redirect
+            redirections:
+              entryPoint:
+                to: websecure        # nom de l’entryPoint cible
+                scheme: https        # (optionnel) force le schéma https
+                permanent: true      # (optionnel) 308 Permanent Redirect
           websecure:
             port: 443
             expose:
@@ -88,9 +88,6 @@ spec:
           enabled: true
         service:
           enabled: false
-          # annotations: {}
-          # type: LoadBalancer
-          # loadBalancerIP: <path:infra-secrets#traefik-loadbalancer-ip
   destination:
     server: "https://kubernetes.default.svc"
     namespace: traefik-external
