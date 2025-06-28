@@ -33,12 +33,12 @@ spec:
           additionalContainers: []
           initContainers: []
         ports:
-          web:
-            redirections:
-              entryPoint:
-                to: websecure        # nom de l’entryPoint cible
-                scheme: https        # (optionnel) force le schéma https
-                permanent: true      # (optionnel) 308 Permanent Redirect
+          # web:
+            # redirections:
+            #   entryPoint:
+            #     to: websecure        # nom de l’entryPoint cible
+            #     scheme: https        # (optionnel) force le schéma https
+            #     permanent: true      # (optionnel) 308 Permanent Redirect
           websecure:
             tls:
               enabled: true
@@ -48,7 +48,7 @@ spec:
         providers:
           kubernetesCRD:
             enabled: true
-            ingressClass: traefik-external
+            ingressClass: traefik
           kubernetesIngress:
             enabled: true
             publishedService:
