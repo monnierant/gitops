@@ -25,6 +25,9 @@ spec:
           - "--serverstransport.insecureSkipVerify=true"
           - "--providers.kubernetescrd.allowCrossNamespace=true"
           - "--log.level=INFO"
+          - "--certificatesresolvers.letsencrypt-prod.acme.email=<path:infra-secrets#email>"
+          - "--certificatesresolvers.letsencrypt-prod.acme.storage=/data/acme.json"
+          - "--certificatesresolvers.letsencrypt-prod.acme.tlschallenge=true"
         deployment:
           enabled: true
           replicas: 1
@@ -33,13 +36,15 @@ spec:
           additionalContainers: []
           initContainers: []
         ports:
-          # web:
+          web:
+            hostPort: 80
             # redirections:
             #   entryPoint:
             #     to: websecure        # nom de l’entryPoint cible
             #     scheme: https        # (optionnel) force le schéma https
             #     permanent: true      # (optionnel) 308 Permanent Redirect
           websecure:
+            hostPort: 443
             tls:
               enabled: true
         ingressRoute:
