@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: traefik-ingress
+rules:
+  - apiGroups: [""]
+    resources: ["services", "endpoints", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses", "ingressclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["traefik.containo.us"]
+    resources:
+      [
+        "middlewares",
+        "ingressroutes",
+        "traefikservices",
+        "tlsoptions",
+        "tlsstores",
+      ]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: traefik-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress
+subjects:
+  - kind: ServiceAccount
+    name: traefik
+    namespace: traefik-external # Your Traefik namespace
