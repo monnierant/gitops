@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knowledge-base
+  namespace: knowledge-base
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+spec:
+  rules:
+    - host: amonnier.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: knowledge-base
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - amonnier.fr
+      secretName: knowledge-base-tls # Traefik will auto-create this with the cert
