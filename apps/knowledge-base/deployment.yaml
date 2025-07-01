@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: knowledge-base
-          image: monnierant/knowledge-base:0.0.1
+          image: monnierant/knowledge-base:1.1.1
           ports:
             - containerPort: 80
