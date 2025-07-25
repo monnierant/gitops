@@ -9,7 +9,7 @@ repoServer:
       emptyDir: {}
   initContainers:
     - name: download-tools
-      image: alpine:3.19
+      image: registry.access.redhat.com/ubi8
       env:
         - name: AVP_VERSION
           value: 1.16.1
