@@ -146,7 +146,7 @@ extraObjects:
             command:
               - sh
               - "-c"
-              - "for file in $(find . -type f -name '*.yaml'! -name '*values.yaml'  ! -path '*/statics/*'); do argocd-vault-plugin generate --verbose-sensitive-output \"$file\"; done"
+              - "for file in $(find . -type f -name '*.yaml'! -name '*values.yaml'  ! -path '*/statics/*'); do echo \"$file\"; argocd-vault-plugin generate --log-level debug --verbose-sensitive-output \"$file\"; done"
           lockRepo: false
       avp-helm.yaml: |
         apiVersion: argoproj.io/v1alpha1
@@ -167,5 +167,5 @@ extraObjects:
               - "-c"
               - |
                 helm template $ARGOCD_APP_NAME --include-crds . |
-                argocd-vault-plugin generate -
+                argocd-vault-plugin generate --log-level debug -
           lockRepo: false
