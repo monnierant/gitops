@@ -9,8 +9,6 @@ spec:
     repoURL: https://github.com/monnierant/gitops
     path: apps/knowledge-base
     targetRevision: HEAD
-    plugin:
-      name: argocd-vault-plugin
   destination:
     server: https://kubernetes.default.svc
     namespace: knowledge-base

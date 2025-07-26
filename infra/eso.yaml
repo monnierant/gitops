@@ -15,8 +15,6 @@ spec:
     chart: external-secrets
     repoURL: https://charts.external-secrets.io
     targetRevision: 0.18.0
-    plugin:
-      name: argocd-vault-plugin
     helm:
       releaseName: eso
   destination:
