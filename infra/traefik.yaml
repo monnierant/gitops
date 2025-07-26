@@ -25,6 +25,8 @@ spec:
     chart: traefik
     repoURL: https://traefik.github.io/charts
     targetRevision: 36.1.0
+    plugin:
+      name: argocd-vault-plugin
     helm:
       releaseName: traefik
       values: |
