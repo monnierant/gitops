@@ -11,3 +11,4 @@ resources:
   - post-install-cr.yaml
   - traefic-rbac.yaml
   - traefik.yaml
+  - avp-test.yaml
