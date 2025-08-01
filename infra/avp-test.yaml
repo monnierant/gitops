@@ -4,4 +4,4 @@ metadata:
   name: example
   namespace: default
 stringData:
-  passwordtest: <path:infra-secrets#email>
+  password: <path:infra-secrets#email>
