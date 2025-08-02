@@ -7,6 +7,8 @@ repoServer:
       name: cmp-plugin
     - name: custom-tools
       emptyDir: {}
+    - name: cmp-tmp
+      emptyDir: {}
   initContainers:
     - name: download-tools
       image: registry.access.redhat.com/ubi8
@@ -22,6 +24,7 @@ repoServer:
       volumeMounts:
         - mountPath: /custom-tools
           name: custom-tools
+
   extraContainers:
     - name: avp
       command: [/var/run/argocd/argocd-cmp-server]
@@ -38,10 +41,35 @@ repoServer:
         - mountPath: /home/argocd/cmp-server/plugins
           name: plugins
         - mountPath: /tmp
-          name: tmp
+          name: cmp-tmp
         # Register plugins into sidecar
         - mountPath: /home/argocd/cmp-server/config/plugin.yaml
           subPath: avp.yaml
+          name: cmp-plugin
+        # Important: Mount tools into $PATH
+        - name: custom-tools
+          subPath: argocd-vault-plugin
+          mountPath: /usr/local/bin/argocd-vault-plugin
+
+    - name: avp-all
+      command: [/var/run/argocd/argocd-cmp-server]
+      image: quay.io/argoproj/argocd:v2.7.9
+      env:
+        - name: ARGOCD_ENV_AVP_TYPE
+          value: kubernetessecret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      volumeMounts:
+        - mountPath: /var/run/argocd
+          name: var-files
+        - mountPath: /home/argocd/cmp-server/plugins
+          name: plugins
+        - mountPath: /tmp
+          name: cmp-tmp
+        # Register plugins into sidecar
+        - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: avp-all.yaml
           name: cmp-plugin
         # Important: Mount tools into $PATH
         - name: custom-tools
@@ -63,13 +91,11 @@ repoServer:
         - mountPath: /home/argocd/cmp-server/plugins
           name: plugins
         - mountPath: /tmp
-          name: tmp
-
+          name: cmp-tmp
         # Register plugins into sidecar
         - mountPath: /home/argocd/cmp-server/config/plugin.yaml
           subPath: avp-helm.yaml
           name: cmp-plugin
-
         # Important: Mount tools into $PATH
         - name: custom-tools
           subPath: argocd-vault-plugin
@@ -128,6 +154,29 @@ extraObjects:
       name: cmp-plugin
       namespace: argocd
     data:
+      avp-all.yaml: |
+        apiVersion: argoproj.io/v1alpha1
+        kind: ConfigManagementPlugin
+        metadata:
+          name: avpall
+          namespace: argocd
+        spec:
+          allowConcurrency: true
+          generate:
+            command:
+              - sh
+              - "-c"
+              - |
+                pwd
+                ls -l .
+                files=$(find . -type f -name '*.yaml' ! -name '*values.yaml' ! -path '*/statics/*')
+                for file in $files; do
+                  if [ -f "$file" ]; then
+                    echo "$file"
+                    argocd-vault-plugin generate --verbose-sensitive-output "$file"
+                  fi
+                done
+          lockRepo: false
       avp.yaml: |
         apiVersion: argoproj.io/v1alpha1
         kind: ConfigManagementPlugin
@@ -141,12 +190,12 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name '*.yaml' ! -name '*values.yaml' | xargs -I {} grep \"<path\\|avp\\.kubernetes\\.io\" {} | grep ."
+                - "find . -name '*.yaml' ! -name '*values.yaml' | xargs -I {} grep \"<path\\:|avp\\.kubernetes\\.io\" {} | grep . || true"
           generate:
             command:
               - sh
               - "-c"
-              - "for file in $(find . -type f -name '*.yaml'! -name '*values.yaml'  ! -path '*/statics/*'); do echo \"$file\"; argocd-vault-plugin generate --log-level debug --verbose-sensitive-output \"$file\"; done"
+              - "for file in $(find . -type f -name '*.yaml' ! -name '*values.yaml'  ! -path '*/statics/*'); do echo \"$file\"; argocd-vault-plugin generate --verbose-sensitive-output $file; done"
           lockRepo: false
       avp-helm.yaml: |
         apiVersion: argoproj.io/v1alpha1
@@ -160,12 +209,12 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name 'Chart.yaml' | grep -qz . && find . -name '*values.yaml'"
+                - "find . -name 'Chart.yaml' | grep -qz . && find . -name '*values.yaml' || true"
           generate:
             command:
               - sh
               - "-c"
               - |
                 helm template $ARGOCD_APP_NAME --include-crds . |
-                argocd-vault-plugin generate --log-level debug -
+                argocd-vault-plugin generate -
           lockRepo: false
