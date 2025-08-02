@@ -4,4 +4,4 @@ metadata:
   name: example
   namespace: default
 stringData:
-  password: "<path:argocd:infra-secrets#email>"
+  passwordtest: "<path:argocd:infra-secrets#email>"
