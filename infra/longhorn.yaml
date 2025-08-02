@@ -19,6 +19,17 @@ spec:
         values: |
           preUpgradeChecker:
             jobEnabled: false
+          defaultSettings:
+            nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
+            defaultDataPath: "/var/lib/longhorn"
+          persistence:
+            defaultClass: true
+            reclaimPolicy: Delete
+          longhornManager:
+            tolerations:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: "Exists"
+                effect: "NoSchedule"
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system
