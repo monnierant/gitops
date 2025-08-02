@@ -167,12 +167,12 @@ extraObjects:
               - sh
               - "-c"
               - |
-                pwd
-                ls -l .
+                pwd>&2
+                ls -l .>&2
                 files=$(find . -type f -name '*.yaml' ! -name '*values.yaml' ! -path '*/statics/*')
                 for file in $files; do
                   if [ -f "$file" ]; then
-                    echo "$file"
+                    echo "$file">&2
                     argocd-vault-plugin generate --verbose-sensitive-output "$file"
                   fi
                 done
@@ -195,7 +195,7 @@ extraObjects:
             command:
               - sh
               - "-c"
-              - "for file in $(find . -type f -name '*.yaml' ! -name '*values.yaml'  ! -path '*/statics/*'); do echo \"$file\"; argocd-vault-plugin generate --verbose-sensitive-output $file; done"
+              - "for file in $(find . -type f -name '*.yaml' ! -name '*values.yaml'  ! -path '*/statics/*'); do echo \"$file\">&2; argocd-vault-plugin generate --verbose-sensitive-output $file; done"
           lockRepo: false
       avp-helm.yaml: |
         apiVersion: argoproj.io/v1alpha1
