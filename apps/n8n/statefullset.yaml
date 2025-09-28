@@ -19,14 +19,12 @@ spec:
           image: docker.n8n.io/n8nio/n8n
           securityContext:
             runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 0
           env:
             - name: PUID
               value: "1000"
             - name: PGID
-              value: "1000"
+              value: "0"
             - name: UMASK
               value: "002"
             - name: TZ
@@ -41,6 +39,11 @@ spec:
               value: "true"
             - name: N8N_PORT
               value: "5678"
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-encryption
+                  key: encryption-key
           volumeMounts:
             - name: n8n-data
               mountPath: /home/node/.n8n
