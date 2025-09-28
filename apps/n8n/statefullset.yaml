@@ -19,7 +19,9 @@ spec:
           image: docker.n8n.io/n8nio/n8n
           securityContext:
             runAsUser: 1000
-            runAsGroup: 0
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
           env:
             - name: PUID
               value: "1000"
