@@ -20,6 +20,9 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 0
+            fsGroup: 0
+            fsUser: 1000
+            fsGroupChangePolicy: Always
           env:
             - name: PUID
               value: "1000"
