@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: csi-smb
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    repoURL: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+    chart: csi-driver-smb
+    targetRevision: v1.15.0 # or latest stable
+    helm:
+      values: |
+        controller:
+          # Tune if you want HA controller replicas
+          replicas: 2
+        node:
+          # Leave default; runs a DaemonSet on all nodes
+          tolerations:
+            - operator: "Exists"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
