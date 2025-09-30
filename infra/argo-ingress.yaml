@@ -10,7 +10,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
 spec:
   rules:
-    - host: argocd.promonni.com
+    - host: argocd.amonnier.fr
       http:
         paths:
           - path: /
@@ -22,5 +22,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - argocd.promonni.com
+        - argocd.amonnier.fr
       secretName: argocd-tls
