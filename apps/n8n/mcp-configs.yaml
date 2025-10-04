@@ -8,8 +8,6 @@ data:
   mcp-tools: ""
   mcp-registry: |
     registry:
-      mcp-discord:
-        ref: ""
       notion:
         ref: ""
       playwright:
