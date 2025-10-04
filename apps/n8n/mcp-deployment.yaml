@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-gateway
+  namespace: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-gateway
+  template:
+    metadata:
+      labels:
+        app: mcp-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: docker/mcp-gateway
+          args:
+            - --transport=streaming
+            - --registry=/mcp_registry
+            - --secrets=/run/secrets/mcp_secrets
+            - --config=/mcp-configs
+            - --tools-config=/mcp-tools
+            - --port=8811
+          volumeMounts:
+            - name: mcp-config
+              mountPath: /mcp-config
+              readOnly: true
+              subPath: mcp-config
+            - name: mcp-registry
+              mountPath: /mcp-registry
+              readOnly: true
+              subPath: mcp-registry
+            - name: mcp-tools
+              mountPath: /mcp-tools
+              readOnly: true
+              subPath: mcp-tools
+            - name: mcp-secrets
+              mountPath: /run/secrets/mcp_secrets
+              subPath: mcp_secrets
+              readOnly: true
+        - name: dind
+          image: docker:27-dind
+          securityContext:
+            privileged: true
+          args:
+            # Expose both the unix socket and a TCP endpoint; unix is enough for your case
+            - --host=unix:///var/run/docker.sock
+            - --host=tcp://0.0.0.0:2375
+            # Avoid overlay2 issues in some environments (you can remove if not needed)
+            - --storage-driver=vfs
+          env:
+            # Disable TLS for simplicity (keeps 2375 insecure inside the pod network)
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          volumeMounts:
+            - name: dind-run
+              mountPath: /var/run
+            - name: dind-lib
+              mountPath: /var/lib/docker
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "docker version"]
+            initialDelaySeconds: 5
+            periodSeconds: 3
+      volumes:
+        # Shared run dir for the socket
+        - name: dind-run
+          emptyDir: {}
+        # DinD image/graph storage (keeps layers within the pod; ephemeral unless backed by PVC)
+        - name: dind-lib
+          emptyDir: {}
+        - name: mcp-config
+          configMap:
+            name: mcp-configs
+            items:
+              - key: mcp-config
+                path: mcp-config
+        - name: mcp-tools
+          configMap:
+            name: mcp-configs
+            items:
+              - key: mcp-tools
+                path: mcp-tools
+        - name: mcp-registry
+          configMap:
+            name: mcp-configs
+            items:
+              - key: mcp-registry
+                path: mcp-registry
+        - name: mcp-secrets
+          secret:
+            secretName: mcp-secrets
+            items:
+              - key: mcp-secrets
+                path: mcp-secrets
