@@ -39,8 +39,7 @@ spec:
               readOnly: true
               subPath: mcp-tools
             - name: mcp-secrets
-              mountPath: /run/secrets/mcp_secrets
-              subPath: mcp_secrets
+              mountPath: /run/secrets/mcp-secrets
               readOnly: true
         - name: dind
           image: docker:27-dind
