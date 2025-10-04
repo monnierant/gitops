@@ -23,6 +23,10 @@ spec:
             - --config=/mcp-configs
             - --tools-config=/mcp-tools
             - --port=8811
+          envFrom:
+            - secretRef:
+                name: mcpgateway-secret # every key in this Secret becomes an env var
+                optional: false
           volumeMounts:
             - name: dind-run
               mountPath: /var/run
@@ -38,9 +42,6 @@ spec:
               mountPath: /mcp-tools
               readOnly: true
               subPath: mcp-tools
-            - name: mcp-secrets
-              mountPath: /run/secrets/mcp-secrets
-              readOnly: true
         - name: dind
           image: docker:27-dind
           securityContext:
@@ -87,6 +88,3 @@ spec:
             items:
               - key: mcp-registry
                 path: mcp-registry
-        - name: mcp-secrets
-          secret:
-            secretName: mcpgateway-secret
