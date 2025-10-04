@@ -18,12 +18,14 @@ spec:
           image: docker/mcp-gateway
           args:
             - --transport=streaming
-            - --registry=/mcp_registry
-            - --secrets=/run/secrets/mcp_secrets
+            - --registry=/mcp-registry
+            - --secrets=/run/secrets/mcp-secrets
             - --config=/mcp-configs
             - --tools-config=/mcp-tools
             - --port=8811
           volumeMounts:
+            - name: dind-run
+              mountPath: /var/run
             - name: mcp-config
               mountPath: /mcp-config
               readOnly: true
@@ -49,7 +51,7 @@ spec:
             - --host=unix:///var/run/docker.sock
             - --host=tcp://0.0.0.0:2375
             # Avoid overlay2 issues in some environments (you can remove if not needed)
-            - --storage-driver=vfs
+            - --storage-driver=overlay2
           env:
             # Disable TLS for simplicity (keeps 2375 insecure inside the pod network)
             - name: DOCKER_HOST
