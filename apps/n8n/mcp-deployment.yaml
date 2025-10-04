@@ -93,7 +93,4 @@ spec:
                 path: mcp-registry
         - name: mcp-secrets
           secret:
-            secretName: mcp-secrets
-            items:
-              - key: mcp-secrets
-                path: mcp-secrets
+            secretName: mcp-secret
