@@ -22,7 +22,6 @@ spec:
             - --secrets=/run/secrets/mcp-secrets
             - --config=/mcp-configs
             - --tools-config=/mcp-tools
-            - --static
             - --port=8811
           volumeMounts:
             - name: dind-run
