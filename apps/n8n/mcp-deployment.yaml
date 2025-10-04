@@ -61,11 +61,6 @@ spec:
               mountPath: /var/run
             - name: dind-lib
               mountPath: /var/lib/docker
-          readinessProbe:
-            exec:
-              command: ["sh", "-c", "docker version"]
-            initialDelaySeconds: 5
-            periodSeconds: 3
       volumes:
         # Shared run dir for the socket
         - name: dind-run
