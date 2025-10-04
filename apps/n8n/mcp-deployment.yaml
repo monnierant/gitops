@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-gateway
-  namespace: mcp
+  namespace: n8n
 spec:
   replicas: 1
   selector:
