@@ -19,7 +19,6 @@ spec:
           args:
             - --transport=streaming
             - --registry=/mcp-registry
-            - --secrets=/run/secrets/mcp-secrets
             - --config=/mcp-configs
             - --tools-config=/mcp-tools
             - --port=8811
