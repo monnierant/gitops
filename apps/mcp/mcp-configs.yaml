@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mcp-configs
-  namespace: n8n
+  namespace: mcp
 data:
   mcp-config: ""
   mcp-tools: ""
