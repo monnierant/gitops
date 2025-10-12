@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: ghcr.io/tiangolo/uvicorn-gunicorn-fastapi:python3.11
+          image: tiangolo/uvicorn-gunicorn:python3.11
           env:
             - name: KEYSETS_JSON
               valueFrom:
