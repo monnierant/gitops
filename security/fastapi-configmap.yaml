@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apikey-auth-app
+  namespace: security
+data:
+  main.py: |
+    import os, json
+    from fastapi import FastAPI, Request, Response
+    from starlette.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
+
+    app = FastAPI()
+    RAW = os.getenv("KEYSETS_JSON", "{}")
+    try:
+      KEYSETS = {k: set(v) for k, v in json.loads(RAW).items()}
+    except Exception:
+      KEYSETS = {}
+
+    @app.get("/healthz")
+    def healthz():
+      return {"ok": True, "sets": {k: len(v) for k, v in KEYSETS.items()}}
+
+    @app.get("/verify")
+    async def verify(req: Request):
+      # choose keyset by query param ?set=<name>
+      set_name = req.query_params.get("set")
+      if not set_name or set_name not in KEYSETS:
+        return Response(status_code=HTTP_400_BAD_REQUEST)
+      key = req.headers.get("x-api-key")
+      if not key or key not in KEYSETS[set_name]:
+        return Response(status_code=HTTP_403_FORBIDDEN)
+      ident = f"{set_name}-key-{abs(hash(key)) % 10**6:06d}"
+      resp = Response(status_code=HTTP_200_OK)
+      resp.headers["X-Auth-User"] = ident
+      resp.headers["X-Auth-Set"]  = set_name
+      return resp

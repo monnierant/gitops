@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: apikey-mcp
+  namespace: mcp
+spec:
+  forwardAuth:
+    address: http://apikey-auth.security/verify?set=mcp
+    trustForwardHeader: false
+    authRequestHeaders:
+      - X-API-Key
+    authResponseHeaders:
+      - X-Auth-User
+      - X-Auth-Set

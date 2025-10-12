@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp
+  namespace: mcp
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: mcp-apikey-mcp@kubernetescrd
+spec:
+  rules:
+    - host: mcp.promonni.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mcpgateway
+                port:
+                  number: 8811
+  tls:
+    - hosts:
+        - mcp.promonni.com
+      secretName: mcp-tls
