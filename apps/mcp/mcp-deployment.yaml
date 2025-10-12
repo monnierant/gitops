@@ -19,7 +19,7 @@ spec:
           args:
             - --transport=streaming
             - --registry=/mcp-registry
-            - --secrets=/run/secrets/mcp-secrets
+            - --secrets=/secrets/mcp-secrets.env
             - --config=/mcp-configs
             - --tools-config=/mcp-tools
             - --port=8811
@@ -39,7 +39,7 @@ spec:
               readOnly: true
               subPath: mcp-tools
             - name: secrets
-              mountPath: /run/secrets
+              mountPath: /secrets
               readOnly: true
         - name: dind
           image: docker:27-dind
