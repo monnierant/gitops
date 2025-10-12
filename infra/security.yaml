@@ -11,6 +11,7 @@ spec:
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
+    namespace: security-infra
   syncPolicy:
     automated:
       prune: true
