@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: apikey-auth
-  namespace: security
+  namespace: security-infra
 spec:
   replicas: 2
   selector:

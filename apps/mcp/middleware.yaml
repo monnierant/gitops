@@ -5,7 +5,7 @@ metadata:
   namespace: mcp
 spec:
   forwardAuth:
-    address: http://apikey-auth.security/verify?set=mcp
+    address: http://apikey-auth.security-infra/verify?set=mcp
     trustForwardHeader: false
     authRequestHeaders:
       - X-API-Key
