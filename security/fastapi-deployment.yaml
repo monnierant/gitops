@@ -17,6 +17,8 @@ spec:
         - name: app
           image: tiangolo/uvicorn-gunicorn:python3.11
           env:
+            - name: APP_MODULE
+              value: "main:app" # <-- tell Gunicorn to import /app/main.py -> app
             - name: KEYSETS_JSON
               valueFrom:
                 secretKeyRef:
