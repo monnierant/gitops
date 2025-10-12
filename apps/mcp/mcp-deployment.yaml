@@ -38,12 +38,9 @@ spec:
               mountPath: /mcp-tools
               readOnly: true
               subPath: mcp-tools
-            - name: mcpgateway-secret
-              secret:
-                secretName: mcpgateway-secret
-                items:
-                  - key: mcpgateway.env
-                    path: mcp-secrets
+            - name: secrets
+              mountPath: /run/secrets
+              readOnly: true
         - name: dind
           image: docker:27-dind
           securityContext:
@@ -72,6 +69,12 @@ spec:
         # DinD image/graph storage (keeps layers within the pod; ephemeral unless backed by PVC)
         - name: dind-lib
           emptyDir: {}
+        - name: secrets
+          secret:
+            secretName: mcpgateway-secret
+            items:
+              - key: mcpgateway.env
+                path: mcp-secrets.env
         - name: mcp-config
           configMap:
             name: mcp-configs
