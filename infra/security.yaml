@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: security-infra
-  namespace: security-infra
+  name: security
+  namespace: security
 spec:
   project: infra
   source:
     repoURL: https://github.com/monnierant/gitops
-    path: security-infra
+    path: security
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: security-infra
+    namespace: security
   syncPolicy:
     automated:
       prune: true

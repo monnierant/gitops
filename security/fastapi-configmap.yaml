@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: apikey-auth-app
-  namespace: security-infra
+  namespace: security
 data:
   main.py: |
     import os, json
