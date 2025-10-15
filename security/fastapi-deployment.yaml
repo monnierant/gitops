@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: tiangolo/uvicorn-gunicorn:python3.11
+          image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
           env:
             - name: APP_MODULE
               value: "main:app" # <-- tell Gunicorn to import /app/main.py -> app
