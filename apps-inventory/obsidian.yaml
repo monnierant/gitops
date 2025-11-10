@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: obsidian
+  namespace: argocd
+spec:
+  project: infra
+  source:
+    repoURL: https://github.com/monnierant/gitops
+    path: apps/obsidian
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: obsidian
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: obsidian
+  namespace: obsidian
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+spec:
+  rules:
+    - host: obsidian.amonnier.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: obsidian
+                port:
+                  number: 5055
+  tls:
+    - hosts:
+        - obsidian.amonnier.fr
+      secretName: obsidian-tls

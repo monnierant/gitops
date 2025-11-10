@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: obsidian
+  namespace: obsidian
+  labels:
+    app: obsidian
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: obsidian
+  template:
+    metadata:
+      labels:
+        app: obsidian
+    spec:
+      containers:
+        - name: app
+          image: lscr.io/linuxserver/obsidian
+
+          ports:
+            - containerPort: 3000
+              name: http
+            - containerPort: 3001
+              name: https
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Paris"
+          volumeMounts:
+            - name: obsidian-data
+              mountPath: /config
+            - name: dshm
+              mountPath: /dev/shm
+          resources:
+            limits:
+              memory: "2Gi"
+      volumes:
+        - name: obsidian-data
+          persistentVolumeClaim:
+            claimName: obsidian-data
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
