@@ -19,7 +19,7 @@ spec:
               service:
                 name: obsidian
                 port:
-                  number: 5055
+                  number: 3000
   tls:
     - hosts:
         - obsidian.amonnier.fr
