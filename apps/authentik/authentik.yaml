@@ -20,10 +20,8 @@ spec:
           enabled: true
           auth:
             existingSecret: authentik-creds
-
         redis:
           enabled: true
-
         server:
           env:
             - name: AUTHENTIK_POSTGRESQL__PASSWORD
@@ -41,6 +39,18 @@ spec:
             enabled: true
             hosts:
               - authentik.amonnier.fr
+        worker:
+          env:
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-creds
+                  key: password
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-creds
+                  key: secret_key
   destination:
     server: "https://kubernetes.default.svc"
     namespace: authentik
