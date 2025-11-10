@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: authentik
+  name: authentik-helm
   namespace: authentik
 spec:
   project: infra
@@ -9,8 +9,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
   source:
     chart: authentik
     repoURL: https://charts.goauthentik.io
