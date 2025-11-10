@@ -37,8 +37,16 @@ spec:
           ingress:
             ingressClassName: traefik
             enabled: true
+            annotations:
+              - traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              - traefik.ingress.kubernetes.io/router.tls: "true"
+              - traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
             hosts:
               - authentik.amonnier.fr
+            tls:
+              - hosts:
+                  - authentik.amonnier.fr
+                secretName: authentik-tls
         worker:
           env:
             - name: AUTHENTIK_POSTGRESQL__PASSWORD
