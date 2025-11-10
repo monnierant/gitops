@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    chart: authentik
+    repoURL: https://charts.goauthentik.io
+    targetRevision: 2025.10.1
+    helm:
+      releaseName: authentik
+      values: |
+        postgresql:
+          enabled: true
+          auth:
+            existingSecret: authentik-creds
+
+        redis:
+          enabled: true
+
+        server:
+          env:
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-creds
+                  key: password
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-creds
+                  key: secret_key
+          ingress:
+            ingressClassName: traefik
+            enabled: true
+            hosts:
+              - authentik.amonnier.fr
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: authentik
