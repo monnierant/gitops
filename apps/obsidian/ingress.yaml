@@ -51,4 +51,4 @@ spec:
   tls:
     - hosts:
         - api.obsidian.amonnier.fr
-      secretName: obsidian-tls
+      secretName: api-obsidian-tls
