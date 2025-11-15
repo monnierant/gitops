@@ -50,5 +50,5 @@ spec:
                   number: 27123
   tls:
     - hosts:
-        - obsidian.amonnier.fr
+        - api.obsidian.amonnier.fr
       secretName: obsidian-tls
