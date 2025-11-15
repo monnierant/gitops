@@ -36,6 +36,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: "obsidian-api-strip-jdr@kubernetescrd"
 spec:
   rules:
     - host: obsidian.amonnier.fr
@@ -52,3 +53,13 @@ spec:
     - hosts:
         - obsidian.amonnier.fr
       secretName: obsidian-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: api-strip-jdr
+  namespace: obsidian
+spec:
+  stripPrefix:
+    prefixes:
+      - "/api/JDR"
