@@ -57,9 +57,9 @@ spec:
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: api-strip-jdr
+  name: obsidian-api-strip-jdr
   namespace: obsidian
 spec:
   stripPrefix:
     prefixes:
-      - "/api/JDR"
+      - /api/JDR
