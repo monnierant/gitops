@@ -43,9 +43,11 @@ spec:
               traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
             hosts:
               - authentik.amonnier.fr
+              - authentik.promonni.com
             tls:
               - hosts:
                   - authentik.amonnier.fr
+                  - authentik.promonni.com
                 secretName: authentik-tls
         worker:
           env:
