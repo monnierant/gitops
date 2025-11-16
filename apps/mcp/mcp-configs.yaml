@@ -12,3 +12,5 @@ data:
         ref: ""
       playwright:
         ref: ""
+      obsidian:
+        ref: ""
