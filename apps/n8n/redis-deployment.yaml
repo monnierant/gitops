@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis
+          image: redis:8.4.0
           args:
             - "redis-server"
             - "--appendonly"

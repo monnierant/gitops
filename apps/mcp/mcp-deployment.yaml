@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: docker/mcp-gateway
+          image: docker/mcp-gateway:v2
           args:
             - --transport=streaming
             - --registry=/mcp-registry
