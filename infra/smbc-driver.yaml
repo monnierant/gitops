@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
     chart: csi-driver-smb
-    targetRevision: v1.15.0 # or latest stable
+    targetRevision: 1.19.1 # or latest stable
     helm:
       values: |
         controller:
