@@ -3,7 +3,6 @@
   "extends": ["config:recommended"],
   "enabledManagers": ["dockerfile", "kubernetes", "helm-values", "helmfile"],
   "argocd": {
-    "enabled": true,
     "managerFilePatterns": ["/\\.ya?ml$/"]
   },
   "kubernetes": {
