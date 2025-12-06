@@ -53,7 +53,7 @@ repoServer:
 
     - name: avp-all
       command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v2.7.9
+      image: quay.io/argoproj/argocd:v2.14.21
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
@@ -78,7 +78,7 @@ repoServer:
 
     - name: avp-helm
       command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v2.7.9
+      image: quay.io/argoproj/argocd:v2.14.21
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
