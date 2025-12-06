@@ -1,7 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "enabledManagers": ["dockerfile", "kubernetes", "helm-values", "helmfile"],
+  "enabledManagers": [
+    "dockerfile",
+    "kubernetes",
+    "helm-values",
+    "helmfile",
+    "argocd"
+  ],
   "argocd": {
     "managerFilePatterns": ["/\\.ya?ml$/"]
   },
