@@ -6,7 +6,7 @@ ipam:
 bpf:
   masquerade: true
 
-kubeProxyReplacement: strict
+kubeProxyReplacement: true
 
 securityContext:
   capabilities:
