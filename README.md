@@ -137,8 +137,6 @@ spec:
     repoURL: https://github.com/monnierant/gitops
     path: infra
     targetRevision: HEAD
-    plugin:
-      name: avpall
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
@@ -152,26 +150,27 @@ EOF
 
 À partir de là, Argo CD synchronise en cascade :
 
-| Étape                                                                        | Application       | Rôle                                                                                                       |
-| ---------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
-| `infra/eso.yaml`                                                             | `eso`             | Installe External Secrets Operator                                                                         |
-| `infra/post-install-cr.yaml` → [post-install-cr/](post-install-cr/)          | `post-install-cr` | Crée le `ClusterSecretStore` GCPSM + middleware Traefik                                                    |
-| `infra/argo-secret.yaml` → [argo-secrets/](argo-secrets/)                    | `argo-secrets`    | `ExternalSecret` qui peuplent `infra-secrets` et la clé SSH du repo privé                                  |
-| `infra/external-repos.yaml` → [external-repos/](external-repos/)             | `external-repos`  | Branche le repo `private-gitops` (clé SSH)                                                                 |
-| `infra/longhorn.yaml`                                                        | `longhorn`        | Storage                                                                                                    |
-| `infra/smbc-driver.yaml`                                                     | `csi-smb`         | CSI SMB                                                                                                    |
-| `infra/traefik.yaml` + `infra/traefic-rbac.yaml` + `infra/argo-ingress.yaml` | `traefik`         | Ingress + dashboard Argo CD sur `argocd.amonnier.fr`                                                       |
-| `infra/security.yaml` → [security/](security/)                               | `security`        | FastAPI security helper                                                                                    |
-| `infra/apps-inventory.yaml` → [apps-inventory/](apps-inventory/)             | `apps-inventory`  | Catalogue d'Applications utilisateur (Authentik, n8n, MCP, …) qui pointent à leur tour vers [apps/](apps/) |
+| Étape                                                                       | Application         | Rôle                                                                                                                                                             |
+| --------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `infra/eso.yaml`                                                            | `eso`               | Installe External Secrets Operator                                                                                                                               |
+| `infra/post-install-cr.yaml` → [post-install-cr/](post-install-cr/)         | `post-install-cr`   | Crée le `ClusterSecretStore` GCPSM + middleware Traefik                                                                                                          |
+| `infra/argo-secret.yaml` → [argo-secrets/](argo-secrets/)                   | `argo-secrets`      | `ExternalSecret` qui peuplent `infra-secrets` et la clé SSH du repo privé                                                                                        |
+| `infra/external-repos.yaml` → [external-repos/](external-repos/)            | `external-repos`    | Branche le repo `private-gitops` (clé SSH)                                                                                                                       |
+| `infra/longhorn.yaml`                                                       | `longhorn`          | Storage                                                                                                                                                          |
+| `infra/smbc-driver.yaml`                                                    | `csi-smb`           | CSI SMB                                                                                                                                                          |
+| `infra/traefic-rbac.yaml` + `infra/argo-ingress.yaml`                       | (RBAC + Ingress)    | RBAC Traefik + dashboard Argo CD sur `argocd.amonnier.fr` (Application `traefik` créée par `bootstrap-secrets`)                                                  |
+| `infra/security.yaml` → [security/](security/)                              | `security`          | FastAPI security helper                                                                                                                                          |
+| `infra/apps-inventory.yaml` → [apps-inventory/](apps-inventory/)            | `apps-inventory`    | Catalogue d'Applications utilisateur (Authentik, n8n, MCP, …) qui pointent à leur tour vers [apps/](apps/)                                                       |
+| `infra/bootstrap-secrets.yaml` → [infra-with-secrets/](infra-with-secrets/) | `bootstrap-secrets` | App-of-apps **avec plugin `avpall`** pour tout ce qui contient des `<path:...>` (Traefik, avp-test). Retry jusqu'à ce que `infra-secrets` soit populated par ESO |
 
 ## Secrets attendus
 
 Les secrets suivants doivent exister dans GCP Secret Manager (projet `amonnier`) :
 
-| Clé GCPSM                           | Utilisation                                                                                                                                                                   |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `k8s1-infra`                        | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:argocd:infra-secrets#...>` dans [infra/traefik.yaml](infra/traefik.yaml) |
-| `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                               |
+| Clé GCPSM                           | Utilisation                                                                                                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `k8s1-infra`                        | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:argocd:infra-secrets#...>` dans [infra-with-secrets/traefik.yaml](infra-with-secrets/traefik.yaml) |
+| `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                                                        |
 
 Côté Kubernetes (créés par ESO) :
 
@@ -196,7 +195,7 @@ Au moment du `manifest generation`, AVP lit le Secret `infra-secrets` du namespa
 
 ### Où placer le plugin
 
-Le plugin s'attache **à l'Application qui pointe le dossier**, pas au fichier qui contient les `<path:...>`. Conséquence : pour qu'un `<path:...>` soit rendu dans `infra/traefik.yaml`, c'est l'Application racine `bootstrap` (qui lit `infra/`) qui doit déclarer le plugin — l'Application `traefik` elle-même n'a rien à faire.
+Le plugin s'attache **à l'Application qui pointe le dossier**, pas au fichier qui contient les `<path:...>`. Pour qu'un `<path:...>` soit substitué dans `infra-with-secrets/traefik.yaml`, c'est l'Application **parente** (`bootstrap-secrets`, qui lit `infra-with-secrets/`) qui déclare le plugin — l'Application `traefik` enfant elle-même n'a rien à faire.
 
 | Cas                                                                          | Où déclarer `source.plugin.name`                                                             |
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
@@ -204,17 +203,16 @@ Le plugin s'attache **à l'Application qui pointe le dossier**, pas au fichier q
 | Application Helm (chart distant) avec `<path:...>` inline dans `helm.values` | sur l'Application **parente** (celle qui lit le `*.yaml` contenant cette Application enfant) |
 | Chart Helm local + `<path:...>` dans `values.yaml`                           | `argocd-vault-plugin-helm` sur l'Application                                                 |
 
-Exemple — Application avec plugin explicite :
+### Pourquoi bootstrap est splitté en deux
 
-```yaml
-spec:
-  source:
-    repoURL: https://github.com/monnierant/gitops
-    path: infra
-    targetRevision: HEAD
-    plugin:
-      name: avpall # ou argocd-vault-plugin-helm
-```
+Chicken-and-egg : AVP a besoin du Secret `argocd/infra-secrets` pour résoudre les `<path:...>`, mais ce Secret est créé par ESO via `argo-secrets` — qui est lui-même déployé par `bootstrap`. Si `bootstrap` utilisait AVP, il échouerait à rendre ses manifestes au tout premier sync (le Secret n'existe pas encore) → aucune Application enfant ne se créerait → deadlock.
+
+D'où le split :
+
+- **`bootstrap`** — pas de plugin (mode `directory`, `recurse: false`). Lit `infra/*.yaml` (top-level uniquement), crée ESO + ExternalSecrets + Longhorn + … et l'Application `bootstrap-secrets`. Aucun de ces fichiers ne contient de `<path:...>`.
+- **`bootstrap-secrets`** — plugin `avpall`. Lit `infra-with-secrets/*.yaml` (Traefik, avp-test, …). Tant que `infra-secrets` n'existe pas, son sync échoue et ArgoCD retry. Une fois ESO + ExternalSecret réconciliés, le sync passe. Pas de blocage des autres Applications pendant l'attente.
+
+Tout fichier futur contenant des `<path:...>` doit aller dans [infra-with-secrets/](infra-with-secrets/), pas dans `infra/`.
 
 ## Accès au dashboard
 
