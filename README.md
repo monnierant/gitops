@@ -137,6 +137,8 @@ spec:
     repoURL: https://github.com/monnierant/gitops
     path: infra
     targetRevision: HEAD
+    plugin:
+      name: avpall
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:
@@ -168,7 +170,7 @@ Les secrets suivants doivent exister dans GCP Secret Manager (projet `amonnier`)
 
 | Clé GCPSM | Utilisation |
 |---|---|
-| `k8s1-infra` | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:infra-secrets#...>` dans [infra/traefik.yaml](infra/traefik.yaml) |
+| `k8s1-infra` | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:argocd:infra-secrets#...>` dans [infra/traefik.yaml](infra/traefik.yaml) |
 | `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops` |
 
 Côté Kubernetes (créés par ESO) :
@@ -188,18 +190,46 @@ stringData:
 
 Au moment du `manifest generation`, AVP lit le Secret `infra-secrets` du namespace `argocd` (peuplé par ESO depuis GCP Secret Manager) et substitue la valeur. Les trois plugins disponibles :
 
-- **`avp`** — détection auto : tout `*.yaml` (hors `*values.yaml`) qui contient `<path:...>` ou `avp.kubernetes.io/...`.
-- **`avpall`** — applique AVP à tous les `*.yaml` du dossier (hors `*values.yaml` et `*/statics/*`).
+- **`argocd-vault-plugin`** — applique AVP à tout `*.yaml` (hors `*values.yaml` et `*/statics/*`) du dossier ciblé.
+- **`avpall`** — variante : applique AVP à tous les `*.yaml` du dossier (hors `*values.yaml` et `*/statics/*`).
 - **`argocd-vault-plugin-helm`** — pour les charts Helm locaux : `helm template | argocd-vault-plugin generate -`.
 
-Pour utiliser un plugin explicitement dans une `Application` :
+### Où placer le plugin
+
+Le plugin s'attache **à l'Application qui pointe le dossier**, pas au fichier qui contient les `<path:...>`. Conséquence : pour qu'un `<path:...>` soit rendu dans `infra/traefik.yaml`, c'est l'Application racine `bootstrap` (qui lit `infra/`) qui doit déclarer le plugin — l'Application `traefik` elle-même n'a rien à faire.
+
+| Cas | Où déclarer `source.plugin.name` |
+|---|---|
+| Raw YAML avec `<path:...>` dans un dossier | sur l'Application qui pointe ce dossier |
+| Application Helm (chart distant) avec `<path:...>` inline dans `helm.values` | sur l'Application **parente** (celle qui lit le `*.yaml` contenant cette Application enfant) |
+| Chart Helm local + `<path:...>` dans `values.yaml` | `argocd-vault-plugin-helm` sur l'Application |
+
+Exemple — Application avec plugin explicite :
 
 ```yaml
 spec:
   source:
+    repoURL: https://github.com/monnierant/gitops
+    path: infra
+    targetRevision: HEAD
     plugin:
-      name: avpall   # ou argocd-vault-plugin-helm
+      name: avpall   # ou argocd-vault-plugin, ou argocd-vault-plugin-helm
 ```
+
+Dans ce repo, `bootstrap` et `apps-inventory` déclarent `avpall` pour que tous les `<path:...>` rencontrés dans leurs sous-dossiers respectifs (et notamment dans les `helm.values` inline des Applications enfants comme `traefik`) soient résolus. `avpall` est utilisé plutôt que `argocd-vault-plugin` car ce dernier a un bloc `discover` qu'ArgoCD exécute aussi pour valider l'usage par nom explicite — si discover renvoie vide, l'erreur `could not find cmp-server plugin with name X supporting the given repository` apparaît. `avpall` n'a pas de `discover`, donc l'usage par nom explicite marche directement.
+
+### Syntaxe `<path:...>`
+
+Toujours utiliser la forme **avec namespace explicite** :
+
+```
+<path:argocd:infra-secrets#email>
+        ^^^^^^ namespace
+               ^^^^^^^^^^^^^ Secret K8s
+                             ^^^^^ clé
+```
+
+La forme courte `<path:infra-secrets#email>` dépend de la variable `AVP_K8S_NAMESPACE` côté sidecar — moins robuste.
 
 ## Accès au dashboard
 

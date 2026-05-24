@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/monnierant/gitops
     path: apps-inventory
     targetRevision: HEAD
+    plugin:
+      name: avpall
   destination:
     server: https://kubernetes.default.svc
   syncPolicy:

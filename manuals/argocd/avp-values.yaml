@@ -190,7 +190,7 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name '*.yaml' ! -name '*values.yaml' | xargs -I {} grep \"<path\\:|avp\\.kubernetes\\.io\" {} | grep . || true"
+                - "find . -name '*.yaml' ! -name '*values.yaml' | xargs -I {} grep -E \"<path:|avp\\.kubernetes\\.io\" {} | grep . || true"
           generate:
             command:
               - sh
