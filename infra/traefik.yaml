@@ -34,9 +34,9 @@ spec:
         additionalArguments:
           - "--serverstransport.insecureSkipVerify=true"
           - "--providers.kubernetescrd.allowCrossNamespace=true"
-          - "--providers.kubernetesingress.ingressendpoint.ip=<path:infra-secrets#entrypoint-ip>"
+          - "--providers.kubernetesingress.ingressendpoint.ip=<path:argocd:infra-secrets#entrypoint-ip>"
           - "--log.level=INFO"
-          - "--certificatesresolvers.letsencrypt-prod.acme.email=<path:infra-secrets#email>"
+          - "--certificatesresolvers.letsencrypt-prod.acme.email=<path:argocd:infra-secrets#email>"
           - "--certificatesresolvers.letsencrypt-prod.acme.storage=/data/acme.json"
           - "--certificatesresolvers.letsencrypt-prod.acme.tlschallenge=true"
           - "--entrypoints.web.address=:80"
@@ -45,7 +45,7 @@ spec:
           - "--providers.kubernetescrd"
           - "--providers.kubernetesingress"
         nodeSelector:
-          kubernetes.io/hostname: <path:infra-secrets#traefik-node-name>
+          kubernetes.io/hostname: <path:argocd:infra-secrets#traefik-node-name>
         deployment:
           enabled: true
           replicas: 1
