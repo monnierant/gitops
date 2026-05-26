@@ -1,0 +1,15 @@
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: k8s02-tal01
+  namespace: longhorn-system
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true,Prune=false
+spec:
+  disks:
+    extra-volume:
+      path: /var/lib/longhorn-extra
+      allowScheduling: true
+      evictionRequested: false
+      storageReserved: 9663676416
+      tags: []
