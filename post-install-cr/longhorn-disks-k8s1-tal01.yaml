@@ -8,7 +8,7 @@ metadata:
 spec:
   disks:
     extra-volume:
-      path: /var/lib/longhorn-extra
+      path: /var/mnt/longhorn-extra
       allowScheduling: true
       evictionRequested: false
       storageReserved: 9663676416
