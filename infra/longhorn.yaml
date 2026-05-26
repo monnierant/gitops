@@ -23,6 +23,7 @@ spec:
             defaultReplicaCount: 1
             nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
             defaultDataPath: "/var/lib/longhorn"
+            storageReservedPercentageForDefaultDisk: 10
           persistence:
             defaultClass: true
             reclaimPolicy: Delete
