@@ -20,6 +20,7 @@ spec:
           preUpgradeChecker:
             jobEnabled: false
           defaultSettings:
+            defaultReplicaCount: 1
             nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
             defaultDataPath: "/var/lib/longhorn"
           persistence:
