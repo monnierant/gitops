@@ -23,9 +23,7 @@ spec:
           git.user: argocd-image-updater
           git.email: argocd-image-updater@amonnier.fr
         extraArgs:
-          # Read Argo CD Application CRs directly from the cluster (no API token needed)
-          - --applications-api
-          - kubernetes
+          # This controller reads Argo CD Application CRs directly from the cluster by default
           # Scan registries every 2 minutes
           - --interval
           - 2m
