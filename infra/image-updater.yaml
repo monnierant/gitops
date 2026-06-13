@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-image-updater
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    chart: argocd-image-updater
+    repoURL: https://argoproj.github.io/argo-helm
+    targetRevision: 1.2.2
+    helm:
+      releaseName: argocd-image-updater
+      values: |
+        config:
+          log.level: info
+          git.user: argocd-image-updater
+          git.email: argocd-image-updater@amonnier.fr
+        extraArgs:
+          # Read Argo CD Application CRs directly from the cluster (no API token needed)
+          - --applications-api
+          - kubernetes
+          # Scan registries every 2 minutes
+          - --interval
+          - 2m
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
