@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  source:
+    chart: metrics-server
+    repoURL: https://kubernetes-sigs.github.io/metrics-server/
+    targetRevision: 3.13.1
+    helm:
+      releaseName: metrics-server
+      values: |
+        args:
+          # Le kubelet Talos présente un certificat serving auto-signé, non signé
+          # par la CA du cluster : sans ce flag, metrics-server rejette le scrape
+          # avec "x509: cannot validate certificate". Le trafic reste chiffré,
+          # seule l'identité du kubelet n'est pas vérifiée.
+          # Alternative écartée : rotate-server-certificates dans la machineconfig
+          # Talos + kubelet-serving-cert-approver (hors repo, 3 noeuds à modifier).
+          - --kubelet-insecure-tls
+        replicas: 1
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kube-system
