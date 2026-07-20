@@ -87,15 +87,32 @@ spec:
           # Un dashboard cree a la main dans l'UI serait perdu au redemarrage.
           persistence:
             enabled: false
+          # Sans root_url explicite, le chart derive le domaine de ingress.hosts
+          # mais construit une URL avec le port interne (3000) : les liens
+          # absolus et les redirections d'auth partent alors sur un port injoignable
+          # depuis l'exterieur.
+          grafana.ini:
+            server:
+              domain: grafana.amonnier.fr
+              root_url: https://grafana.amonnier.fr
+          # Convention du repo : classe via annotation (cf. apps/obsidian,
+          # apps/n8n, apps/mcp), entrypoint websecure et certresolver
+          # letsencrypt-prod declares dans infra-with-secrets/traefik.yaml.
           ingress:
             enabled: true
-            ingressClassName: traefik
             annotations:
+              kubernetes.io/ingress.class: traefik
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
               traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
             hosts:
               - grafana.amonnier.fr
+            path: /
+            pathType: Prefix
+            tls:
+              - hosts:
+                  - grafana.amonnier.fr
+                secretName: grafana-tls
           resources:
             requests:
               cpu: 50m

@@ -1,0 +1,24 @@
+# Talos active Pod Security Admission avec "enforce: baseline" par defaut sur
+# tous les namespaces hors kube-system. node-exporter a besoin de hostNetwork,
+# hostPID, hostPort et de trois hostPath (/proc, /sys, /) pour lire l'etat des
+# noeuds : baseline le refuse. Sans exemption, le DaemonSet echoue avec
+#   violates PodSecurity "baseline:latest": host namespaces (...), hostPath volumes (...)
+#
+# Meme traitement que le namespace traefik-external
+# (cf. infra-with-secrets/traefik.yaml).
+#
+# Ce manifeste est necessaire meme si l'Application parente a CreateNamespace=true :
+# celle-ci cree le namespace sans aucun label.
+#
+# Contrepartie acceptee : Prometheus, Grafana et Alertmanager beneficient aussi de
+# l'exemption alors qu'ils n'en ont pas besoin. L'alternative etait d'isoler
+# node-exporter dans un namespace dedie, au prix d'une Application et d'un
+# ServiceMonitor supplementaires.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
