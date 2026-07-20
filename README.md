@@ -157,6 +157,8 @@ EOF
 | `infra/argo-secret.yaml` → [argo-secrets/](argo-secrets/)                   | `argo-secrets`      | `ExternalSecret` qui peuplent `infra-secrets` et la clé SSH du repo privé                                                                                        |
 | `infra/external-repos.yaml` → [external-repos/](external-repos/)            | `external-repos`    | Branche le repo `private-gitops` (clé SSH)                                                                                                                       |
 | `infra/longhorn.yaml`                                                       | `longhorn`          | Storage                                                                                                                                                          |
+| `infra/metrics-server.yaml`                                                 | `metrics-server`    | Métriques instantanées (`kubectl top`, HPA). `--kubelet-insecure-tls` requis sur Talos                                                                           |
+| `infra/monitoring.yaml` → [monitoring/](monitoring/)                        | `monitoring`        | Métriques historisées : kube-prometheus-stack bridé + Grafana. Cf. [ADR 0001](docs/adr/0001-metriques-historisees-sous-contrainte-disque.md)                     |
 | `infra/smbc-driver.yaml`                                                    | `csi-smb`           | CSI SMB                                                                                                                                                          |
 | `infra/traefic-rbac.yaml` + `infra/argo-ingress.yaml`                       | (RBAC + Ingress)    | RBAC Traefik + dashboard Argo CD sur `argocd.amonnier.fr` (Application `traefik` créée par `bootstrap-secrets`)                                                  |
 | `infra/security.yaml` → [security/](security/)                              | `security`          | FastAPI security helper                                                                                                                                          |
@@ -171,6 +173,7 @@ Les secrets suivants doivent exister dans GCP Secret Manager (projet `amonnier`)
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `k8s1-infra`                        | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:argocd:infra-secrets#...>` dans [infra-with-secrets/traefik.yaml](infra-with-secrets/traefik.yaml) |
 | `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                                                        |
+| `k8s1-grafana`                      | JSON `{"admin-user": "...", "admin-password": "..."}` — consommé via `admin.existingSecret` par [monitoring/kube-prometheus-stack.yaml](monitoring/kube-prometheus-stack.yaml), sans passer par AVP    |
 
 Côté Kubernetes (créés par ESO) :
 

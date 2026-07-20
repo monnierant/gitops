@@ -1,0 +1,117 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Les CRD du prometheus-operator depassent la limite d'annotation de
+      # kubectl apply : sans ServerSideApply, le sync echoue sur "metadata.annotations
+      # too long".
+      - ServerSideApply=true
+  source:
+    chart: kube-prometheus-stack
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 87.17.0
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        # --- Composants du control-plane Talos ---
+        # controller-manager, scheduler et etcd n'ecoutent que sur 127.0.0.1 sur
+        # Talos : les scraper donnerait 3 cibles DOWN en permanence et les alertes
+        # associees hurleraient sans arret. Alternative ecartee : binder sur
+        # 0.0.0.0 dans la machineconfig des 3 noeuds (hors repo).
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+
+        prometheus:
+          prometheusSpec:
+            # Budget disque < 10 Gi partage avec n8n / obsidian / authentik.
+            scrapeInterval: 60s
+            evaluationInterval: 60s
+            retention: 7d
+            # Garde-fou reel : borne la TSDB meme en cas de pic de cardinalite.
+            # La retention en temps seule ne protege de rien.
+            retentionSize: 2GB
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: longhorn
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      # ~1.5x le retentionSize : le cap ne couvre ni le WAL ni les
+                      # blocs en cours de compaction.
+                      storage: 3Gi
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 1Gi
+            # Metriques a forte cardinalite, sans valeur sur un homelab.
+            metricRelabelings:
+              - sourceLabels: [__name__]
+                regex: "apiserver_request_duration_seconds_bucket|apiserver_response_sizes_bucket|container_network_tcp_usage_total|container_network_udp_usage_total|etcd_request_duration_seconds_bucket"
+                action: drop
+
+        alertmanager:
+          alertmanagerSpec:
+            # Pas de PVC : l'etat d'Alertmanager (silences, notifications envoyees)
+            # est reconstruit au demarrage. Ne vaut pas un volume sur ce cluster.
+            storage: {}
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+
+        grafana:
+          # Mot de passe admin issu de GCP Secret Manager via ESO
+          # (cf. grafana-admin-secret.yaml). Meme pattern que authentik-creds :
+          # pas besoin d'AVP, le chart accepte un Secret existant.
+          admin:
+            existingSecret: grafana-admin
+            userKey: admin-user
+            passwordKey: admin-password
+          # Dashboards livres par le chart via ConfigMap : rien a persister.
+          # Un dashboard cree a la main dans l'UI serait perdu au redemarrage.
+          persistence:
+            enabled: false
+          ingress:
+            enabled: true
+            ingressClassName: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+              traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+            hosts:
+              - grafana.amonnier.fr
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+
+        prometheus-node-exporter:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
+        kube-state-metrics:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: monitoring
