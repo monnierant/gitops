@@ -28,6 +28,14 @@ spec:
             jobEnabled: true
           defaultSettings:
             defaultReplicaCount: 1
+            # A 0 (defaut), les engines des volumes restent sur l'ancienne
+            # version apres un upgrade du control plane : on s'est retrouve
+            # avec longhorn-manager en 1.10.2 et les 20 volumes encore en
+            # engine v1.9.1. A 1, Longhorn live-upgrade les engines un volume
+            # a la fois par node, ce qui solde chaque palier avant le suivant.
+            # Ne concerne que les volumes healthy ou detached : un volume
+            # degraded reste sur son ancien engine.
+            concurrentAutomaticEngineUpgradePerNodeLimit: 1
             nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
             defaultDataPath: "/var/lib/longhorn"
             storageReservedPercentageForDefaultDisk: 10
