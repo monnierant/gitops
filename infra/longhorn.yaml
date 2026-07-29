@@ -16,7 +16,7 @@ spec:
       repoURL: https://charts.longhorn.io/
       # Longhorn n'autorise qu'un saut de minor a la fois : 1.9 -> 1.10 -> 1.11 -> 1.12.
       # Ne pas laisser Renovate bumper plusieurs minors d'un coup, le manager refuse de demarrer.
-      targetRevision: 1.11.3 # Replace with the Longhorn version you'd like to install or upgrade to
+      targetRevision: 1.12.0 # Replace with the Longhorn version you'd like to install or upgrade to
       helm:
         values: |
           # Garde-fou natif de Longhorn : valide le chemin d'upgrade AVANT de
