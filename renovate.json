@@ -20,5 +20,32 @@
     "managerFilePatterns": [
       "//\\.ya?ml$//"
     ]
-  }
+  },
+  "packageRules": [
+    {
+      "description": "Longhorn n'accepte qu'un saut de minor a la fois (1.9 -> 1.10 -> 1.11 -> 1.12). Un bump direct fait echouer longhorn-manager au demarrage, ce qui coupe le CSI et bloque tous les pods a PVC. separateMultipleMinor ouvre une PR par minor au lieu de sauter a la derniere version.",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "longhorn"
+      ],
+      "separateMultipleMinor": true,
+      "separateMinorPatch": true
+    },
+    {
+      "description": "Les minors Longhorn doivent etre pris un par un, en verifiant que le manager est healthy et que current-longhorn-version a bien avance avant le palier suivant. Passage par le dependency dashboard pour eviter une montee automatique.",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "longhorn"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    }
+  ]
 }
