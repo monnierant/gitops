@@ -1,0 +1,42 @@
+# PV de reprise : rattache la PVC n8n-data au volume Longhorn qui contient
+# deja les donnees.
+#
+# L'ancien PV auto-provisionne (pvc-c30bbf5d-...) a recu un deletionTimestamp
+# le 26/05/2026 et ne peut plus jamais etre attache : Kubernetes refuse
+# d'attacher un PV en cours de suppression, et un deletionTimestamp ne se
+# retire pas. Le volume Longhorn sous-jacent, lui, est intact.
+#
+# On declare donc un PV statique pointant sur le meme volumeHandle. Le
+# reclaimPolicy Retain garantit qu'une suppression de la PVC ne detruira pas
+# le volume Longhorn.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: n8n-data-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn
+  volumeMode: Filesystem
+  # Pre-binding : reserve ce PV a cette PVC precise et a aucune autre.
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: n8n-data
+    namespace: n8n
+  csi:
+    driver: driver.longhorn.io
+    fsType: ext4
+    volumeHandle: pvc-c30bbf5d-476e-4c7b-a8d3-f90d61fc0f15
+    volumeAttributes:
+      dataEngine: v1
+      dataLocality: disabled
+      disableRevisionCounter: "true"
+      fromBackup: ""
+      fsType: ext4
+      numberOfReplicas: "3"
+      staleReplicaTimeout: "30"
+      unmapMarkSnapChainRemoved: ignored

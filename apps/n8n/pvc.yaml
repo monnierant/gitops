@@ -10,3 +10,7 @@ spec:
     requests:
       storage: 10Gi # adapte la taille selon tes besoins
   storageClassName: longhorn
+  # Lie explicitement au PV statique de pv.yaml, qui pointe sur le volume
+  # Longhorn existant. Sans ca, une PVC recreee provisionnerait un volume
+  # neuf et vide.
+  volumeName: n8n-data-pv

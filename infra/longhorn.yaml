@@ -28,7 +28,11 @@ spec:
             storageReservedPercentageForDefaultDisk: 10
           persistence:
             defaultClass: true
-            reclaimPolicy: Delete
+            # Retain : une PVC supprimee par erreur (prune Argo, manip) laisse
+            # le volume Longhorn intact et recuperable. Contrepartie : les
+            # volumes des apps reellement supprimees doivent etre nettoyes a la
+            # main dans l'UI Longhorn.
+            reclaimPolicy: Retain
           longhornManager:
             tolerations:
               - key: "node-role.kubernetes.io/control-plane"
