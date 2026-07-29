@@ -28,10 +28,11 @@ spec:
     helm:
       releaseName: traefik
       values: |
-        globalArguments:
+        # Chart v41 : `globalArguments` a ete supprime, ces flags passent
+        # desormais par `additionalArguments`.
+        additionalArguments:
           - "--global.sendAnonymousUsage=false"
           - "--global.checkNewVersion=false"
-        additionalArguments:
           - "--serverstransport.insecureSkipVerify=true"
           - "--providers.kubernetescrd.allowCrossNamespace=true"
           - "--providers.kubernetesingress.ingressendpoint.ip=<path:argocd:infra-secrets#entrypoint-ip>"
@@ -46,6 +47,12 @@ spec:
           - "--providers.kubernetesingress"
         nodeSelector:
           kubernetes.io/hostname: <path:argocd:infra-secrets#traefik-node-name>
+        # Les entrypoints utilisent des hostPort 80/443 : avec RollingUpdate
+        # (maxUnavailable: 0 par defaut) l'ancien pod ne libere jamais les
+        # ports et le nouveau reste Pending indefiniment. Recreate = quelques
+        # secondes de coupure, mais les upgrades passent.
+        updateStrategy:
+          type: Recreate
         deployment:
           enabled: true
           replicas: 1
@@ -61,11 +68,13 @@ spec:
             exposedPort: 80
             protocol: TCP
             hostPort: 80
-            redirections:
-              entryPoint:
-                to: websecure        # nom de l’entryPoint cible
-                scheme: https        # (optionnel) force le schéma https
-                permanent: true      # (optionnel) 308 Permanent Redirect
+            # Chart v41 : `redirections` est passe sous `http`.
+            http:
+              redirections:
+                entryPoint:
+                  to: websecure        # nom de l’entryPoint cible
+                  scheme: https        # (optionnel) force le schéma https
+                  permanent: true      # (optionnel) 308 Permanent Redirect
           websecure:
             port: 443
             expose:
@@ -73,8 +82,10 @@ spec:
             exposedPort: 443
             protocol: TCP
             hostPort: 443
-            tls:
-              enabled: true
+            # Chart v41 : `tls` est passe sous `http`.
+            http:
+              tls:
+                enabled: true
         ingressRoute:
           dashboard:
             enabled: false

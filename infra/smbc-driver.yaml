@@ -11,6 +11,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # spec.volumeLifecycleModes du CSIDriver smb.csi.k8s.io est immuable :
+      # l'objet existant est en ["Persistent"] et le chart y ajoute "Ephemeral".
+      # Un patch echoue, il faut recreer l'objet.
+      - Replace=true
   source:
     repoURL: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
     chart: csi-driver-smb

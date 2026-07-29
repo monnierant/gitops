@@ -11,6 +11,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Les CRD external-secrets v2 depassent la limite de 262144 octets de
+      # l'annotation last-applied-configuration posee par l'apply client-side.
+      # Le server-side apply ne l'utilise pas.
+      - ServerSideApply=true
   source:
     chart: external-secrets
     repoURL: https://charts.external-secrets.io
