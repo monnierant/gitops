@@ -11,10 +11,15 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      # spec.volumeLifecycleModes du CSIDriver smb.csi.k8s.io est immuable :
-      # l'objet existant est en ["Persistent"] et le chart y ajoute "Ephemeral".
-      # Un patch echoue, il faut recreer l'objet.
-      - Replace=true
+      # spec.volumeLifecycleModes du CSIDriver smb.csi.k8s.io est immuable.
+      # L'objet datait d'un chart qui ne declarait que ["Persistent"] alors que
+      # le chart >= 1.20 y ajoute "Ephemeral" : ni apply ni replace ne passent,
+      # les deux sont des updates. Replace=true ne reglait donc rien (seul
+      # Replace + Force aurait fait un delete/create, mais Force s'applique a
+      # toute l'app et aurait detruit/recree le Deployment et les DaemonSets au
+      # moindre drift). L'objet a ete supprime une fois a la main le 2026-07-30,
+      # Argo l'a recree avec les deux modes : plus rien d'immuable ne bloque, on
+      # revient a un apply standard.
   source:
     repoURL: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
     chart: csi-driver-smb
