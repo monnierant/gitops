@@ -1,0 +1,23 @@
+# Copie de bootstrap/root-application.yaml du repo MonniHermes/staging-gitops :
+# on la porte ici pour que la racine soit elle aussi pilotee par GitOps plutot
+# que par un kubectl apply manuel. Garder les deux fichiers alignes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging-gitops-root
+  namespace: argocd
+spec:
+  project: infra
+  source:
+    repoURL: git@github.com:MonniHermes/staging-gitops.git
+    path: argocd
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

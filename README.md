@@ -154,8 +154,8 @@ EOF
 | --------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `infra/eso.yaml`                                                            | `eso`               | Installe External Secrets Operator                                                                                                                               |
 | `infra/post-install-cr.yaml` → [post-install-cr/](post-install-cr/)         | `post-install-cr`   | Crée le `ClusterSecretStore` GCPSM + middleware Traefik                                                                                                          |
-| `infra/argo-secret.yaml` → [argo-secrets/](argo-secrets/)                   | `argo-secrets`      | `ExternalSecret` qui peuplent `infra-secrets` et la clé SSH du repo privé                                                                                        |
-| `infra/external-repos.yaml` → [external-repos/](external-repos/)            | `external-repos`    | Branche le repo `private-gitops` (clé SSH)                                                                                                                       |
+| `infra/argo-secret.yaml` → [argo-secrets/](argo-secrets/)                   | `argo-secrets`      | `ExternalSecret` qui peuplent `infra-secrets` et les clés SSH des repos privés                                                                                   |
+| `infra/external-repos.yaml` → [external-repos/](external-repos/)            | `external-repos`    | Branche les repos privés `private-gitops` et `staging-gitops` (clés SSH)                                                                                         |
 | `infra/longhorn.yaml`                                                       | `longhorn`          | Storage                                                                                                                                                          |
 | `infra/metrics-server.yaml`                                                 | `metrics-server`    | Métriques instantanées (`kubectl top`, HPA). `--kubelet-insecure-tls` requis sur Talos                                                                           |
 | `infra/monitoring.yaml` → [monitoring/](monitoring/)                        | `monitoring`        | Métriques historisées : kube-prometheus-stack bridé + Grafana. Cf. [ADR 0001](docs/adr/0001-metriques-historisees-sous-contrainte-disque.md)                     |
@@ -169,17 +169,47 @@ EOF
 
 Les secrets suivants doivent exister dans GCP Secret Manager (projet `amonnier`) :
 
-| Clé GCPSM                           | Utilisation                                                                                                                                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Clé GCPSM                           | Utilisation                                                                                                                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `k8s1-infra`                        | Bag de secrets pour l'infra : `email`, `entrypoint-ip`, `traefik-node-name`, … référencés via `<path:argocd:infra-secrets#...>` dans [infra-with-secrets/traefik.yaml](infra-with-secrets/traefik.yaml) |
-| `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                                                        |
-| `k8s1-grafana`                      | JSON `{"admin-user": "...", "admin-password": "..."}` — consommé via `admin.existingSecret` par [monitoring/kube-prometheus-stack.yaml](monitoring/kube-prometheus-stack.yaml), sans passer par AVP    |
+| `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                                                         |
+| `k8s1-github-staging-gitops-deploy` | Deploy key SSH (clé privée) du repo `MonniHermes/staging-gitops`, **en écriture** : l'Image Updater y pousse ses write-back Kustomize                                                                   |
+| `k8s1-grafana`                      | JSON `{"admin-user": "...", "admin-password": "..."}` — consommé via `admin.existingSecret` par [monitoring/kube-prometheus-stack.yaml](monitoring/kube-prometheus-stack.yaml), sans passer par AVP     |
 
 Côté Kubernetes (créés par ESO) :
 
 - `argocd/infra-secrets` — clé/valeur réutilisée par AVP via `<path:argocd:infra-secrets#email>` etc.
 - `argocd/private-gitops-deploy-secrets` — `kubernetes.io/ssh-auth`.
 - `argocd/argocd-private-gitops-ssh` — `Secret` typé `argocd.argoproj.io/secret-type: repository` consommé directement par Argo CD.
+- `argocd/argocd-staging-gitops-ssh` — idem pour `MonniHermes/staging-gitops`.
+
+### Ajouter la deploy key d'un nouveau repo privé
+
+Une deploy key GitHub est scopée à **un seul repo** : la clé d'un repo ne peut pas être réutilisée pour un autre, GitHub refuse l'enregistrement d'une clé publique déjà employée. Chaque repo privé branché sur Argo CD a donc sa propre paire et sa propre clé GCPSM.
+
+Si le repo appartient à une **organisation**, vérifier d'abord que les deploy keys y sont autorisées — le réglage est org-wide et vaut `false` par défaut sur les orgs récentes, l'ajout de clé échoue alors en `HTTP 422: Deploy keys are disabled for this repository` :
+
+```bash
+gh api orgs/<ORG> --jq .deploy_keys_enabled_for_repositories
+gh api -X PATCH orgs/<ORG> -f deploy_keys_enabled_for_repositories=true
+```
+
+```bash
+ssh-keygen -t ed25519 -C "argocd@amonnier.fr" -f ./deploy-key -N ""
+
+# Cle publique -> GitHub, en ecriture (--allow-write) si l'Image Updater
+# doit pousser des write-back sur ce repo.
+gh repo deploy-key add ./deploy-key.pub \
+  --repo MonniHermes/staging-gitops --title "ArgoCD Write" --allow-write
+
+# Cle privee -> GCP Secret Manager, sous le nom reference par l'ExternalSecret.
+gcloud secrets create k8s1-github-staging-gitops-deploy \
+  --project amonnier --data-file=./deploy-key
+
+shred -u ./deploy-key ./deploy-key.pub
+```
+
+Puis ajouter l'`ExternalSecret` correspondant dans [argo-secrets/](argo-secrets/) et l'`Application` racine dans [external-repos/](external-repos/).
 
 ## Comment AVP rend les secrets
 
