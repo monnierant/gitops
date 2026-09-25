@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak-helm
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+  source:
+    chart: keycloakx
+    repoURL: https://codecentric.github.io/helm-charts
+    targetRevision: 7.3.2
+    helm:
+      releaseName: keycloak
+      values: |
+        command:
+          - /opt/keycloak/bin/kc.sh
+          - start
+          - --http-port=8080
+        http:
+          relativePath: /
+        # Traefik transmet X-Forwarded-*, pas l'en-tete Forwarded (RFC 7239)
+        proxy:
+          enabled: true
+          mode: xforwarded
+        database:
+          vendor: postgres
+          hostname: keycloak-postgres
+          port: 5432
+          database: keycloak
+          username: keycloak
+          existingSecret: keycloak-creds
+          existingSecretKey: db-password
+        dbchecker:
+          enabled: true
+        extraEnv: |
+          - name: KC_HOSTNAME
+            value: https://keycloak.amonnier.fr
+          - name: KC_BOOTSTRAP_ADMIN_USERNAME
+            value: admin
+          - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-creds
+                key: admin-password
+          - name: JAVA_OPTS_APPEND
+            value: -Djgroups.dns.query={{ include "keycloak.fullname" . }}-headless
+        resources:
+          requests:
+            cpu: 100m
+            memory: 768Mi
+          limits:
+            memory: 1536Mi
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: websecure
+            traefik.ingress.kubernetes.io/router.tls: "true"
+            traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+          rules:
+            - host: keycloak.amonnier.fr
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - hosts:
+                - keycloak.amonnier.fr
+              secretName: keycloak-tls
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: keycloak
