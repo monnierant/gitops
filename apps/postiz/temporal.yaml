@@ -31,6 +31,9 @@ kind: Deployment
 metadata:
   name: temporal
   namespace: postiz
+  annotations:
+    # Redemarre le pod quand le Secret change (rotation GCPSM via ESO).
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
