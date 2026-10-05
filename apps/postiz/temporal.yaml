@@ -76,6 +76,11 @@ spec:
               value: "false"
             - name: TEMPORAL_NAMESPACE
               value: default
+            # La visibilite SQL plafonne a 3 search attributes Text par namespace :
+            # les Custom*Field de demo d'auto-setup en prennent 2 et le backend
+            # Postiz plante a l'enregistrement des siens (502 sur /api).
+            - name: SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES
+              value: "true"
             - name: DYNAMIC_CONFIG_FILE_PATH
               value: config/dynamicconfig/development-sql.yaml
             - name: BIND_ON_IP
