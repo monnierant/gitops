@@ -59,6 +59,14 @@ spec:
       containers:
         - name: postiz
           image: ghcr.io/gitroomhq/postiz-app:v2.24.0
+          # Chaque cle du Secret `postiz-providers` (JSON GCPSM
+          # `k8s1-postiz-providers`) devient une variable d'environnement :
+          # ajouter un provider = ajouter ses cles au JSON, rien a toucher ici.
+          # Une entree de `env` ci-dessous l'emporte en cas de doublon.
+          envFrom:
+            - secretRef:
+                name: postiz-providers
+                optional: true
           env:
             - name: TZ
               value: "Europe/Paris"
@@ -110,42 +118,6 @@ spec:
               value: "30"
             - name: NX_ADD_PLUGINS
               value: "false"
-            - name: LINKEDIN_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: LINKEDIN_CLIENT_ID
-                  optional: true
-            - name: LINKEDIN_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: LINKEDIN_CLIENT_SECRET
-                  optional: true
-            - name: INSTAGRAM_APP_ID
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: INSTAGRAM_APP_ID
-                  optional: true
-            - name: INSTAGRAM_APP_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: INSTAGRAM_APP_SECRET
-                  optional: true
-            - name: FACEBOOK_APP_ID
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: FACEBOOK_APP_ID
-                  optional: true
-            - name: FACEBOOK_APP_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: postiz
-                  key: FACEBOOK_APP_SECRET
-                  optional: true
           ports:
             - containerPort: 5000
           # Le premier demarrage (migrations Prisma + build) prend plusieurs
