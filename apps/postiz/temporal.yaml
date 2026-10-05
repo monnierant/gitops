@@ -1,0 +1,107 @@
+# Temporal orchestre les publications planifiees de Postiz (>= v2).
+# Contrairement au docker-compose officiel, pas d'Elasticsearch : la visibilite
+# avancee passe par Postgres (supporte depuis Temporal 1.20), ce qui economise
+# un pod JVM et son volume.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temporal-dynamicconfig
+  namespace: postiz
+data:
+  development-sql.yaml: |
+    limit.maxIDLength:
+      - value: 255
+        constraints: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temporal
+  namespace: postiz
+spec:
+  selector:
+    app: temporal
+  ports:
+    - name: grpc
+      port: 7233
+      targetPort: 7233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal
+  namespace: postiz
+  annotations:
+    # Redemarre le pod quand le Secret change (rotation GCPSM via ESO).
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal
+  template:
+    metadata:
+      labels:
+        app: temporal
+    spec:
+      # Sans ca, Kubernetes injecte TEMPORAL_PORT=tcp://... (service `temporal`)
+      # et le script auto-setup le prend pour sa config.
+      enableServiceLinks: false
+      # Toute la stack postiz reste hors des control-planes (voir postiz.yaml).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      containers:
+        - name: temporal
+          image: temporalio/auto-setup:1.28.1
+          env:
+            - name: DB
+              value: postgres12
+            - name: DB_PORT
+              value: "5432"
+            - name: POSTGRES_SEEDS
+              value: postgres
+            - name: POSTGRES_USER
+              value: postiz
+            - name: POSTGRES_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: POSTGRES_PASSWORD
+            - name: ENABLE_ES
+              value: "false"
+            - name: TEMPORAL_NAMESPACE
+              value: default
+            - name: DYNAMIC_CONFIG_FILE_PATH
+              value: config/dynamicconfig/development-sql.yaml
+            - name: BIND_ON_IP
+              value: 0.0.0.0
+            - name: TEMPORAL_BROADCAST_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - containerPort: 7233
+          readinessProbe:
+            tcpSocket:
+              port: 7233
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              # Conso observee ~150 Mi.
+              memory: 512Mi
+          volumeMounts:
+            - name: dynamicconfig
+              mountPath: /etc/temporal/config/dynamicconfig
+      volumes:
+        - name: dynamicconfig
+          configMap:
+            name: temporal-dynamicconfig

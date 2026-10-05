@@ -1,0 +1,213 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postiz-uploads
+  namespace: postiz
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postiz
+  namespace: postiz
+spec:
+  selector:
+    app: postiz
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postiz
+  namespace: postiz
+  annotations:
+    # Redemarre le pod quand le Secret change (rotation GCPSM via ESO).
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # Volume RWO : l'ancien pod doit lacher les uploads avant que le nouveau monte.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postiz
+  template:
+    metadata:
+      labels:
+        app: postiz
+    spec:
+      enableServiceLinks: false
+      # Jamais sur un control-plane : postiz (~1,8 Gi) y affame kube-apiserver
+      # jusqu'a l'OOM controller Talos. Le label est pose par Talos, aucun nom
+      # de noeud a maintenir.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      containers:
+        - name: postiz
+          image: ghcr.io/gitroomhq/postiz-app:v2.24.0
+          env:
+            - name: TZ
+              value: "Europe/Paris"
+            - name: MAIN_URL
+              value: "https://postiz.amonnier.fr"
+            - name: FRONTEND_URL
+              value: "https://postiz.amonnier.fr"
+            - name: NEXT_PUBLIC_BACKEND_URL
+              value: "https://postiz.amonnier.fr/api"
+            - name: BACKEND_INTERNAL_URL
+              value: "http://localhost:3000"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: POSTGRES_PASSWORD
+            # $(POSTGRES_PASSWORD) est expanse par Kubernetes : le mot de passe
+            # doit donc rester URL-safe (alphanumerique).
+            - name: DATABASE_URL
+              value: "postgresql://postiz:$(POSTGRES_PASSWORD)@postgres:5432/postiz"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+            - name: TEMPORAL_ADDRESS
+              value: "temporal:7233"
+            # Plafonne le heap de chaque process Node (frontend, backend,
+            # workers, orchestrator) : sans borne, l'orchestrator grimpait a
+            # 1,4 Go pour un usage leger.
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=512"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: JWT_SECRET
+            - name: IS_GENERAL
+              value: "true"
+            # Passer a "true" une fois le compte admin cree.
+            - name: DISABLE_REGISTRATION
+              value: "false"
+            - name: RUN_CRON
+              value: "true"
+            - name: STORAGE_PROVIDER
+              value: "local"
+            - name: UPLOAD_DIRECTORY
+              value: "/uploads"
+            - name: NEXT_PUBLIC_UPLOAD_DIRECTORY
+              value: "/uploads"
+            - name: API_LIMIT
+              value: "30"
+            - name: NX_ADD_PLUGINS
+              value: "false"
+            - name: LINKEDIN_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: LINKEDIN_CLIENT_ID
+                  optional: true
+            - name: LINKEDIN_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: LINKEDIN_CLIENT_SECRET
+                  optional: true
+            - name: INSTAGRAM_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: INSTAGRAM_APP_ID
+                  optional: true
+            - name: INSTAGRAM_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: INSTAGRAM_APP_SECRET
+                  optional: true
+            - name: FACEBOOK_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: FACEBOOK_APP_ID
+                  optional: true
+            - name: FACEBOOK_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: postiz
+                  key: FACEBOOK_APP_SECRET
+                  optional: true
+          ports:
+            - containerPort: 5000
+          # Le premier demarrage (migrations Prisma + build) prend plusieurs
+          # minutes. Sondes TCP : le chemin d'une route de sante bouge entre
+          # versions.
+          startupProbe:
+            tcpSocket:
+              port: 5000
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              # Doit tenir sur un worker (3,4 Gi allouables) ; conso observee ~1,8 Gi.
+              memory: 2Gi
+          volumeMounts:
+            - name: uploads
+              mountPath: /uploads
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: postiz-uploads
+        - name: config
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: postiz
+  namespace: postiz
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+spec:
+  rules:
+    - host: postiz.amonnier.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: postiz
+                port:
+                  number: 5000
+  tls:
+    - hosts:
+        - postiz.amonnier.fr
+      secretName: postiz-tls
