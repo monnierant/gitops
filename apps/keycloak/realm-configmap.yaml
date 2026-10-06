@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: keycloak
+data:
+  # Realm de bootstrap. ATTENTION : --import-realm est ignore si le realm
+  # existe deja cote Keycloak, il n'ecrase rien. Modifier ce fichier n'a donc
+  # aucun effet sur une instance deja initialisee ; il faut soit supprimer le
+  # realm dans la console, soit lancer `kc.sh import --override` a la main.
+  #
+  # Les ${...} sont resolus depuis les variables d'environnement du conteneur
+  # au moment de l'import : les secrets viennent d'External Secrets, jamais
+  # d'ici.
+  realm.json: |
+    {
+      "realm": "mcp",
+      "enabled": true,
+      "displayName": "MCP",
+      "sslRequired": "external",
+      "registrationAllowed": false,
+      "loginWithEmailAllowed": false,
+      "clients": [
+        {
+          "clientId": "claude",
+          "name": "Claude (connecteur MCP)",
+          "enabled": true,
+          "protocol": "openid-connect",
+          "publicClient": false,
+          "secret": "${MCP_CLIENT_SECRET}",
+          "standardFlowEnabled": true,
+          "implicitFlowEnabled": false,
+          "directAccessGrantsEnabled": false,
+          "serviceAccountsEnabled": false,
+          "fullScopeAllowed": false,
+          "redirectUris": [
+            "https://claude.ai/api/mcp/auth_callback",
+            "https://claude.com/api/mcp/auth_callback",
+            "http://localhost/callback",
+            "http://127.0.0.1/callback"
+          ],
+          "webOrigins": [],
+          "attributes": {
+            "pkce.code.challenge.method": "S256"
+          },
+          "protocolMappers": [
+            {
+              "name": "mcp-audience",
+              "protocol": "openid-connect",
+              "protocolMapper": "oidc-audience-mapper",
+              "consentRequired": false,
+              "config": {
+                "included.custom.audience": "https://plex-mcp.amonnier.fr/mcp",
+                "access.token.claim": "true",
+                "id.token.claim": "false",
+                "introspection.token.claim": "true",
+                "lightweight.claim": "false"
+              }
+            }
+          ]
+        }
+      ],
+      "users": [
+        {
+          "username": "antoine",
+          "enabled": true,
+          "emailVerified": true,
+          "credentials": [
+            {
+              "type": "password",
+              "value": "${MCP_USER_PASSWORD}",
+              "temporary": false
+            }
+          ],
+          "realmRoles": ["default-roles-mcp"]
+        }
+      ]
+    }
