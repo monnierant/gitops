@@ -51,7 +51,7 @@ spec:
 
         prometheus:
           prometheusSpec:
-            # Budget disque < 10 Gi partage avec n8n / obsidian / authentik.
+            # Budget disque < 10 Gi partage avec n8n / obsidian.
             scrapeInterval: 60s
             evaluationInterval: 60s
             retention: 7d
@@ -96,7 +96,7 @@ spec:
 
         grafana:
           # Mot de passe admin issu de GCP Secret Manager via ESO
-          # (cf. grafana-admin-secret.yaml). Meme pattern que authentik-creds :
+          # (cf. grafana-admin-secret.yaml). Meme pattern que keycloak-creds :
           # pas besoin d'AVP, le chart accepte un Secret existant.
           admin:
             existingSecret: grafana-admin

@@ -162,7 +162,7 @@ EOF
 | `infra/smbc-driver.yaml`                                                    | `csi-smb`           | CSI SMB                                                                                                                                                          |
 | `infra/traefic-rbac.yaml` + `infra/argo-ingress.yaml`                       | (RBAC + Ingress)    | RBAC Traefik + dashboard Argo CD sur `argocd.amonnier.fr` (Application `traefik` créée par `bootstrap-secrets`)                                                  |
 | `infra/security.yaml` → [security/](security/)                              | `security`          | FastAPI security helper                                                                                                                                          |
-| `infra/apps-inventory.yaml` → [apps-inventory/](apps-inventory/)            | `apps-inventory`    | Catalogue d'Applications utilisateur (Authentik, n8n, MCP, …) qui pointent à leur tour vers [apps/](apps/)                                                       |
+| `infra/apps-inventory.yaml` → [apps-inventory/](apps-inventory/)            | `apps-inventory`    | Catalogue d'Applications utilisateur (Keycloak, n8n, MCP, …) qui pointent à leur tour vers [apps/](apps/)                                                       |
 | `infra/bootstrap-secrets.yaml` → [infra-with-secrets/](infra-with-secrets/) | `bootstrap-secrets` | App-of-apps **avec plugin `avpall`** pour tout ce qui contient des `<path:...>` (Traefik, avp-test). Retry jusqu'à ce que `infra-secrets` soit populated par ESO |
 
 ## Secrets attendus
