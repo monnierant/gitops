@@ -20,19 +20,6 @@ spec:
           - /opt/keycloak/bin/kc.sh
           - start
           - --http-port=8080
-          # Import de bootstrap uniquement : sans effet si le realm existe.
-          - --import-realm
-        # Monte en subPath : Keycloak ignore les liens symboliques ..data/
-        # d'une ConfigMap montee en repertoire.
-        extraVolumes: |
-          - name: realm
-            configMap:
-              name: keycloak-realm
-        extraVolumeMounts: |
-          - name: realm
-            mountPath: /opt/keycloak/data/import/realm.json
-            subPath: realm.json
-            readOnly: true
         http:
           relativePath: /
         # Traefik transmet X-Forwarded-*, pas l'en-tete Forwarded (RFC 7239)
@@ -59,17 +46,6 @@ spec:
               secretKeyRef:
                 name: keycloak-creds
                 key: admin-password
-          # Resolus dans realm.json au moment de l'import.
-          - name: MCP_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-creds
-                key: mcp-client-secret
-          - name: MCP_USER_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-creds
-                key: mcp-user-password
           - name: JAVA_OPTS_APPEND
             value: -Djgroups.dns.query={{ include "keycloak.fullname" . }}-headless
         resources:
