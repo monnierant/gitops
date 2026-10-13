@@ -19,9 +19,55 @@ spec:
       values: |
         controller:
           replicas: 2
+          # Profil "systeme critique" : request = p95, limites du chart
+          # supprimees. Base : p95 sur 51h, 2026-10-14 (CPU < 4m partout,
+          # plancher 10m).
+          resources:
+            csiProvisioner:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            csiResizer:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            csiSnapshotter:
+              requests:
+                cpu: 10m
+                memory: 48Mi
+              limits: null
+            livenessProbe:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            nfs:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
         node:
           tolerations:
             - operator: "Exists"
+          # Meme profil, max des p95 entre noeuds du DaemonSet.
+          resources:
+            livenessProbe:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits: null
+            nodeDriverRegistrar:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            nfs:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

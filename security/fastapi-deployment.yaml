@@ -26,6 +26,15 @@ spec:
                   key: KEYSETS_JSON
           ports:
             - containerPort: 80
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 27m / 501Mi, max 503Mi sur 51h, 2026-10-14.
+          resources:
+            requests:
+              cpu: 30m
+              memory: 512Mi
+            limits:
+              memory: 768Mi
           readinessProbe:
             httpGet: { path: /healthz, port: 80 }
             initialDelaySeconds: 2

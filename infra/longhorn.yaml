@@ -39,6 +39,20 @@ spec:
             nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
             defaultDataPath: "/var/lib/longhorn"
             storageReservedPercentageForDefaultDisk: 10
+            # CPU reserve par instance-manager, en % de l'allocatable du noeud.
+            # A 12 (defaut), on reservait 474m sur les CP et 234m sur tal04/05
+            # pour une p95 mesuree de 8 a 20m (max 24m) : 23 a 53x trop.
+            # A 1 : 39m sur les CP, 19m sur les workers, 159m sur tal06.
+            # tal06 porte presque tous les engines (p95 1,9 coeur) : il passe
+            # sous-reserve, a corriger par un override par noeud
+            # (spec.instanceManagerCPURequest du Node Longhorn), hors Git.
+            # v2 : valeur actuelle conservee, le moteur v2 est desactive.
+            # Mesure : p95/max sur 51h, 2026-10-14.
+            # ATTENTION : changer ce setting redemarre les instance-managers
+            # (et donc les engines) : a appliquer volumes detaches.
+            guaranteedInstanceManagerCPU:
+              v1: "1"
+              v2: "31"
           persistence:
             defaultClass: true
             # Retain : une PVC supprimee par erreur (prune Argo, manip) laisse
@@ -47,6 +61,13 @@ spec:
             # main dans l'UI Longhorn.
             reclaimPolicy: Retain
           longhornManager:
+            # Profil "systeme critique" : request = p95, aucune limite.
+            # Base : p95 82m / 244Mi (tal06, max des pods du DaemonSet) sur
+            # 51h, 2026-10-14. Les autres noeuds tournent a ~12m / 150Mi.
+            resources:
+              requests:
+                cpu: 85m
+                memory: 256Mi
             tolerations:
               - key: "node-role.kubernetes.io/control-plane"
                 operator: "Exists"

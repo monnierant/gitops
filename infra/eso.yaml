@@ -21,6 +21,30 @@ spec:
     targetRevision: 2.9.0
     helm:
       releaseName: eso
+      values: |
+        # Profil "web/standard" : request = p95, limite memoire =
+        # max(1,5 x request, 1,2 x max), pas de limite CPU.
+        # Base : p95/max sur 51h, 2026-10-14.
+        resources:
+          requests:
+            cpu: 5m
+            memory: 80Mi
+          limits:
+            memory: 160Mi
+        certController:
+          resources:
+            requests:
+              cpu: 5m
+              memory: 80Mi
+            limits:
+              memory: 128Mi
+        webhook:
+          resources:
+            requests:
+              cpu: 5m
+              memory: 48Mi
+            limits:
+              memory: 80Mi
   destination:
     server: "https://kubernetes.default.svc"
     namespace: external-secrets
