@@ -47,6 +47,13 @@ spec:
             # main dans l'UI Longhorn.
             reclaimPolicy: Retain
           longhornManager:
+            # Profil "systeme critique" : request = p95, aucune limite.
+            # Base : p95 82m / 244Mi (tal06, max des pods du DaemonSet) sur
+            # 51h, 2026-10-14. Les autres noeuds tournent a ~12m / 150Mi.
+            resources:
+              requests:
+                cpu: 85m
+                memory: 256Mi
             tolerations:
               - key: "node-role.kubernetes.io/control-plane"
                 operator: "Exists"

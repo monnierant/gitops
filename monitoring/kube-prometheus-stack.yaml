@@ -85,9 +85,13 @@ spec:
             # Pas de PVC : l'etat d'Alertmanager (silences, notifications envoyees)
             # est reconstruit au demarrage. Ne vaut pas un volume sur ce cluster.
             storage: {}
+            # Profil "a etat" : request = limit memoire (max x 1,2), pas de
+            # limite CPU. Base : p95 1m / 39Mi, max 47Mi sur 51h, 2026-10-14.
             resources:
               requests:
-                cpu: 10m
+                cpu: 5m
+                memory: 64Mi
+              limits:
                 memory: 64Mi
 
         grafana:
@@ -128,10 +132,24 @@ spec:
               - hosts:
                   - grafana.amonnier.fr
                 secretName: grafana-tls
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 14m / 317Mi, pic 976Mi sur 51h, 2026-10-14.
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 15m
+              memory: 320Mi
+            limits:
+              memory: 1184Mi
+          # Sidecars sc-dashboard / sc-datasources (meme cle pour les deux).
+          # Meme profil. Base : p95 2m / 87Mi, max 88Mi.
+          sidecar:
+            resources:
+              requests:
+                cpu: 5m
+                memory: 96Mi
+              limits:
+                memory: 144Mi
 
         prometheus-node-exporter:
           resources:
@@ -139,11 +157,34 @@ spec:
               cpu: 10m
               memory: 32Mi
 
+        # Profil "web/standard". Base : p95 3m / 60Mi, max 63Mi sur 51h,
+        # 2026-10-14.
         kube-state-metrics:
           resources:
             requests:
-              cpu: 10m
+              cpu: 5m
               memory: 64Mi
+            limits:
+              memory: 96Mi
+
+        prometheusOperator:
+          # Profil "web/standard". Base : p95 4m / 64Mi, max 70Mi sur 51h,
+          # 2026-10-14.
+          resources:
+            requests:
+              cpu: 5m
+              memory: 64Mi
+            limits:
+              memory: 96Mi
+          # config-reloader des pods Prometheus ET Alertmanager (une seule
+          # cle). Meme profil. Base : p95 0m / 26Mi, max 28Mi.
+          prometheusConfigReloader:
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 48Mi
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring

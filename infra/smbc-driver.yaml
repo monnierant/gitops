@@ -29,10 +29,53 @@ spec:
         controller:
           # Tune if you want HA controller replicas
           replicas: 2
+          # Profil "systeme critique" : request = p95, limites du chart
+          # supprimees. Base : p95 sur 51h, 2026-10-14 (CPU < 3m partout,
+          # plancher 10m).
+          resources:
+            csiProvisioner:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            csiResizer:
+              requests:
+                cpu: 10m
+                memory: 48Mi
+              limits: null
+            livenessProbe:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits: null
+            smb:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
         node:
           # Leave default; runs a DaemonSet on all nodes
           tolerations:
             - operator: "Exists"
+        # DaemonSet Linux : les ressources sont sous `linux`, pas `node`.
+        # Profil "systeme critique", max des p95 entre noeuds, 51h, 2026-10-14.
+        linux:
+          resources:
+            livenessProbe:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
+            nodeDriverRegistrar:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits: null
+            smb:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits: null
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

@@ -27,6 +27,13 @@ spec:
           # Talos + kubelet-serving-cert-approver (hors repo, 3 noeuds à modifier).
           - --kubelet-insecure-tls
         replicas: 1
+        # Profil "systeme critique" : request = p95, aucune limite.
+        # Base : p95 5m / 69Mi sur 51h, 2026-10-14 (defaut du chart :
+        # 100m / 200Mi).
+        resources:
+          requests:
+            cpu: 10m
+            memory: 80Mi
   destination:
     server: "https://kubernetes.default.svc"
     namespace: kube-system

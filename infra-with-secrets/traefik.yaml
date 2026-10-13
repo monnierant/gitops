@@ -53,6 +53,12 @@ spec:
         # secondes de coupure, mais les upgrades passent.
         updateStrategy:
           type: Recreate
+        # Profil "systeme critique" : request = p95, aucune limite.
+        # Base : p95 6m / 110Mi, max 12m / 123Mi sur 51h, 2026-10-14.
+        resources:
+          requests:
+            cpu: 10m
+            memory: 112Mi
         deployment:
           enabled: true
           replicas: 1

@@ -27,6 +27,15 @@ spec:
           # Scan registries every 2 minutes
           - --interval
           - 2m
+        # Profil "web/standard" : request = p95, limite memoire =
+        # max(1,5 x request, 1,2 x max), pas de limite CPU.
+        # Base : p95 3m / 71Mi, max 74Mi sur 51h, 2026-10-14.
+        resources:
+          requests:
+            cpu: 5m
+            memory: 80Mi
+          limits:
+            memory: 128Mi
   destination:
     server: "https://kubernetes.default.svc"
     namespace: argocd
