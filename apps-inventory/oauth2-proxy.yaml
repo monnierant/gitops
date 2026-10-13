@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+spec:
+  project: infra
+  sources:
+    # oauth2-proxy partage pour tout le domaine amonnier.fr, branche sur le
+    # realm "amonnier.fr" du Keycloak. Il ne sert aucune application lui-meme :
+    # Traefik l'interroge en forwardAuth (middlewares dans apps/oauth2-proxy)
+    # pour chaque app sans authentification native.
+    - repoURL: https://oauth2-proxy.github.io/manifests
+      chart: oauth2-proxy
+      targetRevision: 10.7.1
+      helm:
+        releaseName: oauth2-proxy
+        values: |
+          config:
+            # client-id, client-secret, cookie-secret depuis GCP Secret
+            # Manager (apps/oauth2-proxy/secret.yaml).
+            existingSecret: oauth2-proxy-secrets
+            configFile: |-
+              provider = "keycloak-oidc"
+              oidc_issuer_url = "https://keycloak.amonnier.fr/realms/amonnier.fr"
+              redirect_url = "https://auth.amonnier.fr/oauth2/callback"
+              # Mode forwardAuth : une session valide repond 202, Traefik
+              # laisse alors passer la requete vers l'app protegee.
+              upstreams = [ "static://202" ]
+              # Le realm accepte n'importe quel compte : l'autorisation porte
+              # sur le role client oauth2-proxy:access, attribue dans Keycloak.
+              email_domains = [ "*" ]
+              allowed_roles = [ "oauth2-proxy:access" ]
+              code_challenge_method = "S256"
+              # Cookie de session valable sur tous les sous-domaines, et
+              # retour autorise vers n'importe quelle app du domaine apres
+              # le login.
+              cookie_domains = [ ".amonnier.fr" ]
+              whitelist_domains = [ ".amonnier.fr" ]
+              cookie_secure = true
+              cookie_samesite = "lax"
+              reverse_proxy = true
+              set_xauthrequest = true
+              skip_provider_button = true
+
+          # Profil "web standard" : request CPU, pas de limite CPU, limite memoire.
+          # Valeurs provisoires, sans mesure : a recaler sur le p95 une fois
+          # le proxy en service.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+
+          securityContext:
+            enabled: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+
+          ingress:
+            enabled: true
+            className: traefik
+            path: /
+            pathType: Prefix
+            hosts:
+              - auth.amonnier.fr
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: "true"
+              traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
+            tls:
+              - hosts:
+                  - auth.amonnier.fr
+                secretName: auth-tls
+    # ExternalSecret et middlewares Traefik.
+    - repoURL: https://github.com/monnierant/gitops
+      path: apps/oauth2-proxy
+      targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: oauth2-proxy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

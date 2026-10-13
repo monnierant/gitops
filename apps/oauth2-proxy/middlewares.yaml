@@ -1,0 +1,43 @@
+# Middlewares a poser sur un Ingress d'une app sans authentification native,
+# dans cet ordre :
+#   traefik.ingress.kubernetes.io/router.middlewares: "oauth2-proxy-auth-errors@kubernetescrd,oauth2-proxy-forward-auth@kubernetescrd"
+# (Traefik tourne avec allowCrossNamespace=true.)
+#
+# forward-auth demande a oauth2-proxy si la requete porte une session valide :
+# 202 -> la requete passe, 401 -> pas de session, 403 -> session sans le role.
+# auth-errors transforme le 401 en redirection 302 vers le debut du login
+# Keycloak ; {url} est l'URL d'origine complete (schema + hote), on y revient
+# apres le callback. Le 403 n'est pas intercepte : rediriger vers le login
+# bouclerait pour un compte authentifie mais non autorise.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forward-auth
+  namespace: oauth2-proxy
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.oauth2-proxy.svc.cluster.local/oauth2/auth
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: auth-errors
+  namespace: oauth2-proxy
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  errors:
+    status:
+      - "401"
+    statusRewrites:
+      "401": 302
+    service:
+      name: oauth2-proxy
+      port: 80
+    query: /oauth2/start?rd={url}
