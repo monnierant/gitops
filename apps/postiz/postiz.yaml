@@ -137,14 +137,16 @@ spec:
               port: 5000
             periodSeconds: 30
             failureThreshold: 3
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 103m / 1589Mi, max 164m / 1618Mi sur 52h, 2026-10-14.
+          # La limite doit tenir sur un worker (3,4 Gi allouables).
           resources:
             requests:
-              cpu: 200m
-              memory: 1Gi
+              cpu: 110m
+              memory: 1600Mi
             limits:
-              cpu: "2"
-              # Doit tenir sur un worker (3,4 Gi allouables) ; conso observee ~1,8 Gi.
-              memory: 2Gi
+              memory: 2400Mi
           volumeMounts:
             - name: uploads
               mountPath: /uploads

@@ -36,6 +36,11 @@ spec:
           existingSecretKey: db-password
         dbchecker:
           enabled: true
+          # Pas de limite CPU : le defaut du chart (20m) est retire, le reste
+          # du defaut (20m / 32Mi) est conserve, faute de mesure (init container).
+          resources:
+            limits:
+              cpu: null
         extraEnv: |
           - name: KC_HOSTNAME
             value: https://keycloak.amonnier.fr
@@ -48,12 +53,15 @@ spec:
                 key: admin-password
           - name: JAVA_OPTS_APPEND
             value: -Djgroups.dns.query={{ include "keycloak.fullname" . }}-headless
+        # Profil "web/standard" : request = p95, limite memoire =
+        # max(1,5 x request, 1,2 x max), pas de limite CPU.
+        # Base : p95 12m / 731Mi, max 414m / 767Mi sur 52h, 2026-10-14.
         resources:
           requests:
-            cpu: 100m
-            memory: 768Mi
+            cpu: 15m
+            memory: 736Mi
           limits:
-            memory: 1536Mi
+            memory: 1120Mi
         ingress:
           enabled: true
           ingressClassName: traefik

@@ -18,3 +18,12 @@ spec:
           image: monnierant/knowledge-base:1.1.1
           ports:
             - containerPort: 80
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 0,0m / 19Mi, max 0,1m / 19Mi sur 52h, 2026-10-14.
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              memory: 48Mi

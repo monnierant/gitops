@@ -50,10 +50,15 @@ spec:
             exec:
               command: ["pg_isready", "-U", "keycloak", "-d", "keycloak"]
             periodSeconds: 10
+          # Profil "a etat" : request CPU = p95, request = limite memoire =
+          # 1,2 x max, pas de limite CPU.
+          # Base : p95 13m / 56Mi, max 19m / 62Mi sur 52h, 2026-10-14.
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 15m
+              memory: 80Mi
+            limits:
+              memory: 80Mi
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
