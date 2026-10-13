@@ -23,7 +23,7 @@ spec:
             configFile: |-
               provider = "keycloak-oidc"
               oidc_issuer_url = "https://keycloak.amonnier.fr/realms/amonnier.fr"
-              redirect_url = "https://auth.amonnier.fr/oauth2/callback"
+              redirect_url = "https://keycloak.amonnier.fr/oauth2/callback"
               # Mode forwardAuth : une session valide repond 202, Traefik
               # laisse alors passer la requete vers l'app protegee.
               upstreams = [ "static://202" ]
@@ -64,21 +64,24 @@ spec:
             seccompProfile:
               type: RuntimeDefault
 
+          # Pas d'hote dedie : le proxy est servi sous keycloak.amonnier.fr/oauth2.
+          # Traefik priorise le chemin le plus long, le reste de l'hote reste a
+          # Keycloak (qui n'utilise pas /oauth2). Pas de DNS supplementaire.
           ingress:
             enabled: true
             className: traefik
-            path: /
+            path: /oauth2
             pathType: Prefix
             hosts:
-              - auth.amonnier.fr
+              - keycloak.amonnier.fr
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: websecure
               traefik.ingress.kubernetes.io/router.tls: "true"
               traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
             tls:
               - hosts:
-                  - auth.amonnier.fr
-                secretName: auth-tls
+                  - keycloak.amonnier.fr
+                secretName: oauth2-proxy-tls
     # ExternalSecret et middlewares Traefik.
     - repoURL: https://github.com/monnierant/gitops
       path: apps/oauth2-proxy
