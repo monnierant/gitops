@@ -28,9 +28,10 @@ spec:
           # Profil "a etat" : request CPU = p95, request = limite memoire =
           # 1,2 x max, pas de limite CPU.
           # Base : p95 2,4m / 11Mi, max 3,5m / 12Mi sur 52h, 2026-10-14.
+          # Plancher 64Mi : 52h d'historique trop court pour une base (fork AOF).
           resources:
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 64Mi
             limits:
-              memory: 16Mi
+              memory: 64Mi
