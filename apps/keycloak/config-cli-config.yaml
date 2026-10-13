@@ -1,0 +1,55 @@
+# Clients Keycloak declares en GitOps, appliques par le Job PostSync
+# keycloak-config-cli (cf. config-cli-job.yaml).
+#
+# Ne declarer ici QUE ce qui doit etre gere par Git : le realm amonnier.fr
+# n'est pas decrit en entier (pas d'utilisateurs, pas d'identity providers,
+# pas les autres clients). Les objets existants non declares ne sont jamais
+# supprimes : remote-state + import.managed.*=no-delete (cf. le Job).
+#
+# Substitution de variables (keycloak-config-cli 6.x) : syntaxe $(env:NOM),
+# la variable doit etre presente dans l'environnement du Job.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  namespace: keycloak
+data:
+  amonnier.fr.yaml: |
+    realm: amonnier.fr
+    clients:
+      - clientId: oauth2-proxy
+        name: oauth2-proxy
+        protocol: openid-connect
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: client-secret
+        secret: $(env:OAUTH2_PROXY_CLIENT_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        implicitFlowEnabled: false
+        serviceAccountsEnabled: false
+        redirectUris:
+          - https://keycloak.amonnier.fr/oauth2/callback
+        webOrigins:
+          - "+"
+        attributes:
+          pkce.code.challenge.method: S256
+        protocolMappers:
+          - name: aud-oauth2-proxy
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            consentRequired: false
+            config:
+              included.client.audience: oauth2-proxy
+              id.token.claim: "true"
+              access.token.claim: "true"
+    roles:
+      client:
+        oauth2-proxy:
+          - name: access
+            description: Acces aux applications protegees par oauth2-proxy
+    groups:
+      - name: apps-access
+        clientRoles:
+          oauth2-proxy:
+            - access

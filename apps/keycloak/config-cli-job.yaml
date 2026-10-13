@@ -1,0 +1,122 @@
+# Applique la ConfigMap keycloak-config au realm amonnier.fr.
+#
+# Hook PostSync : relance a chaque sync de l'Application keycloak (auto-sync,
+# donc a chaque modification de la ConfigMap). BeforeHookCreation supprime le
+# Job precedent juste avant d'en recreer un ; pas de ttlSecondsAfterFinished,
+# qui entrerait en conflit avec la gestion du hook par Argo CD.
+#
+# Authentification : client de bootstrap "keycloak-config-cli" du realm
+# amonnier.fr (client_credentials, service account realm-management/realm-admin),
+# cree a la main une fois. Login hors realm master => KEYCLOAK_SKIPSERVERINFO
+# (/admin/serverinfo reserve au master depuis Keycloak 26.4) + version explicite.
+#
+# Suppression : remote-state ne purge que ce que l'outil a cree lui-meme, et
+# import.managed.{client,group,role}=no-delete interdit toute suppression de
+# clients, groupes et roles, meme retires de la config. Retirer un objet de la
+# ConfigMap ne le supprime donc pas : le faire a la main dans la console.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-config-cli
+  namespace: keycloak
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak-config-cli
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        # Utilisateur de l'image (USER 65534 dans le Dockerfile upstream)
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: keycloak-config-cli
+          # Pas de build 26.7.x publie : 26.5.5 est la cible Keycloak la plus
+          # recente de la 6.5.1 (API admin compatible avec le serveur 26.7.4).
+          image: docker.io/adorsys/keycloak-config-cli:6.5.1-26.5.5
+          env:
+            - name: KEYCLOAK_URL
+              # Service HTTP interne du chart keycloakx (port 80 -> 8080),
+              # KC_HTTP_RELATIVE_PATH=/ donc pas de contexte.
+              value: http://keycloak-keycloakx-http.keycloak.svc.cluster.local
+            - name: KEYCLOAK_LOGINREALM
+              value: amonnier.fr
+            - name: KEYCLOAK_GRANTTYPE
+              value: client_credentials
+            - name: KEYCLOAK_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-config-cli-auth
+                  key: client-id
+            - name: KEYCLOAK_CLIENTSECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-config-cli-auth
+                  key: client-secret
+            - name: KEYCLOAK_SKIPSERVERINFO
+              value: "true"
+            - name: KEYCLOAK_VERSION
+              value: "26.7.4"
+            - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+              value: "true"
+            - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+              value: 120s
+            - name: IMPORT_FILES_LOCATIONS
+              value: file:/config/*
+            - name: IMPORT_VARSUBSTITUTION_ENABLED
+              value: "true"
+            - name: IMPORT_REMOTESTATE_ENABLED
+              value: "true"
+            # Reapplique a chaque run, meme si le fichier n'a pas change :
+            # corrige la derive manuelle et la rotation du client-secret
+            # (la substitution ne modifie pas le fichier source).
+            - name: IMPORT_CACHE_ENABLED
+              value: "false"
+            - name: IMPORT_MANAGED_CLIENT
+              value: no-delete
+            - name: IMPORT_MANAGED_GROUP
+              value: no-delete
+            - name: IMPORT_MANAGED_ROLE
+              value: no-delete
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-config-oauth2-proxy
+                  key: OAUTH2_PROXY_CLIENT_SECRET
+            - name: JAVA_OPTS
+              value: -XX:MaxRAMPercentage=75 -Djava.io.tmpdir=/tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: keycloak-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

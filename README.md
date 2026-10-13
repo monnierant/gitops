@@ -211,6 +211,20 @@ shred -u ./deploy-key ./deploy-key.pub
 
 Puis ajouter l'`ExternalSecret` correspondant dans [argo-secrets/](argo-secrets/) et l'`Application` racine dans [external-repos/](external-repos/).
 
+## Clients Keycloak en GitOps
+
+Les clients du realm `amonnier.fr` gérés par Git sont déclarés dans la ConfigMap [apps/keycloak/config-cli-config.yaml](apps/keycloak/config-cli-config.yaml), au format [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli). Le Job [apps/keycloak/config-cli-job.yaml](apps/keycloak/config-cli-job.yaml) est un hook Argo CD `PostSync` : il réapplique la config à chaque sync de l'Application `keycloak`, donc à chaque modification de la ConfigMap.
+
+La config est **partielle** : seuls les objets déclarés sont créés ou mis à jour. Rien n'est jamais supprimé (remote-state + `import.managed.{client,group,role}=no-delete`) : retirer un client de la ConfigMap ne le supprime pas, il faut le faire dans la console.
+
+**Ajouter un client** : ajouter une entrée sous `clients` (et ses rôles sous `roles.client.<clientId>`). Un secret se passe par variable d'environnement, jamais en clair : `secret: $(env:MON_CLIENT_SECRET)`, avec un `ExternalSecret` dans le namespace `keycloak` (cf. [apps/keycloak/config-cli-secrets.yaml](apps/keycloak/config-cli-secrets.yaml)) et l'entrée `env` correspondante dans le Job.
+
+**Bootstrap (une seule fois, à la main)** : dans le realm `amonnier.fr`, créer le client confidentiel `keycloak-config-cli` (Client authentication ON, Service accounts roles ON, tous les autres flows OFF), lui attribuer le rôle client `realm-management` → `realm-admin` (onglet *Service accounts roles*), puis stocker `{"client-id":"keycloak-config-cli","client-secret":"..."}` dans GCP Secret Manager sous `k8s1-keycloak-config-cli`.
+
+**Groupe `apps-access`** : porte le rôle `oauth2-proxy:access` exigé par oauth2-proxy (`allowed_roles`). Donner l'accès aux applications protégées = ajouter l'utilisateur au groupe (Users → utilisateur → Groups → Join group).
+
+Suivre une exécution : `kubectl -n keycloak logs job/keycloak-config-cli`.
+
 ## Comment AVP rend les secrets
 
 AVP tourne en sidecar du `repo-server` avec `AVP_TYPE=kubernetessecret`. Les manifests utilisent la syntaxe :
