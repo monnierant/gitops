@@ -95,14 +95,15 @@ spec:
             tcpSocket:
               port: 7233
             periodSeconds: 10
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 25m / 192Mi, max 46m / 193Mi sur 52h, 2026-10-14.
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 30m
+              memory: 192Mi
             limits:
-              cpu: "1"
-              # Conso observee ~150 Mi.
-              memory: 512Mi
+              memory: 288Mi
           volumeMounts:
             - name: dynamicconfig
               mountPath: /etc/temporal/config/dynamicconfig

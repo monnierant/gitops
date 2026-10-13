@@ -36,9 +36,15 @@ spec:
               mountPath: /config
             - name: dshm
               mountPath: /dev/shm
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 21m / 407Mi, max 32m / 409Mi sur 52h, 2026-10-14.
           resources:
+            requests:
+              cpu: "25m"
+              memory: "416Mi"
             limits:
-              memory: "2Gi"
+              memory: "640Mi"
       volumes:
         - name: obsidian-data
           persistentVolumeClaim:

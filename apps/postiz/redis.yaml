@@ -52,14 +52,15 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+          # Profil "a etat" : request CPU = p95, request = limite memoire =
+          # 1,2 x max, pas de limite CPU.
+          # Base : p95 8,7m / 12Mi, max 17m / 17Mi sur 52h, 2026-10-14.
           resources:
             requests:
-              cpu: 20m
-              memory: 64Mi
+              cpu: 10m
+              memory: 32Mi
             limits:
-              cpu: 500m
-              # Conso observee < 10 Mi.
-              memory: 128Mi
+              memory: 32Mi
   volumeClaimTemplates:
     - metadata:
         name: data

@@ -61,14 +61,15 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+          # Profil "a etat" : request CPU = p95, request = limite memoire =
+          # 1,2 x max, pas de limite CPU.
+          # Base : p95 16m / 123Mi, max 28m / 154Mi sur 52h, 2026-10-14.
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 20m
+              memory: 192Mi
             limits:
-              cpu: "1"
-              # Conso observee ~80 Mi (postiz + bases Temporal).
-              memory: 512Mi
+              memory: 192Mi
   volumeClaimTemplates:
     - metadata:
         name: data

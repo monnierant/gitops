@@ -18,6 +18,16 @@ spec:
       values: |
         postgresql:
           enabled: true
+          primary:
+            # Profil "a etat" : request CPU = p95, request = limite memoire =
+            # 1,2 x max, pas de limite CPU.
+            # Base : p95 39m / 240Mi, max 110m / 282Mi sur 52h, 2026-10-14.
+            resources:
+              requests:
+                cpu: 40m
+                memory: 352Mi
+              limits:
+                memory: 352Mi
           auth:
             existingSecret: authentik-creds
         redis:
@@ -34,6 +44,15 @@ spec:
                 secretKeyRef:
                   name: authentik-creds
                   key: secret_key
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 27m / 495Mi, max 126m / 704Mi sur 52h, 2026-10-14.
+          resources:
+            requests:
+              cpu: 30m
+              memory: 496Mi
+            limits:
+              memory: 864Mi
           ingress:
             ingressClassName: traefik
             enabled: true
@@ -61,6 +80,15 @@ spec:
                 secretKeyRef:
                   name: authentik-creds
                   key: secret_key
+          # Profil "web/standard" : request = p95, limite memoire =
+          # max(1,5 x request, 1,2 x max), pas de limite CPU.
+          # Base : p95 112m / 302Mi, max 124m / 340Mi sur 52h, 2026-10-14.
+          resources:
+            requests:
+              cpu: 120m
+              memory: 304Mi
+            limits:
+              memory: 464Mi
   destination:
     server: "https://kubernetes.default.svc"
     namespace: authentik
