@@ -1,0 +1,19 @@
+# Filet de securite pour les conteneurs deployes sans bloc resources :
+# ils recoivent une request (10m CPU / 64Mi) et une limite memoire (256Mi)
+# par defaut. Ne remplace pas un sizing explicite : tout conteneur doit
+# declarer ses propres requests/limits (cf. ValidatingAdmissionPolicy
+# require-resources-requests). Pas de min/max : ce LimitRange ne bloque rien.
+# Pas de limite CPU par defaut (grille : request CPU seule, pas de throttling).
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defaults
+  namespace: keycloak
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 10m
+        memory: 64Mi
+      default:
+        memory: 256Mi
