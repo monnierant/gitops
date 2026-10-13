@@ -39,6 +39,19 @@ spec:
             nodeDownPodDeletionPolicy: "delete-both-statefulset-and-deployment-pod"
             defaultDataPath: "/var/lib/longhorn"
             storageReservedPercentageForDefaultDisk: 10
+            # CPU reserve par instance-manager, en % de l'allocatable du noeud.
+            # A 12 (defaut), on reservait 474m sur les CP et 234m sur tal04/05
+            # pour une p95 mesuree de 8 a 20m (max 24m) : 23 a 53x trop.
+            # A 1 : 39m sur les CP, 19m sur les workers, 159m sur tal06 (p95
+            # 1,9 coeur, sans limite : il garde l'acces au CPU libre).
+            # v2 : valeur actuelle conservee, le moteur v2 est desactive.
+            # Mesure : p95/max sur 51h, 2026-10-14.
+            # ATTENTION : changer ce setting redemarre les instance-managers
+            # (et donc les engines) : a merger volumes detaches, en fenetre de
+            # maintenance (volumes a une seule replique).
+            guaranteedInstanceManagerCPU:
+              v1: "1"
+              v2: "31"
           persistence:
             defaultClass: true
             # Retain : une PVC supprimee par erreur (prune Argo, manip) laisse
