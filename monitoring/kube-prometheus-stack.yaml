@@ -34,6 +34,21 @@ spec:
         kubeEtcd:
           enabled: false
 
+        # L'apiserver produit ~la moitie des series (112k sur 232k en 2026-10),
+        # surtout des buckets d'histogrammes. La premiere regle est celle du chart
+        # (elle saute si on redefinit la liste) ; la seconde drop les histogrammes
+        # qu'aucune alerte n'utilise. apiserver_request_sli_duration_seconds_bucket
+        # est garde : les alertes KubeAPIErrorBudgetBurn en dependent.
+        kubeApiServer:
+          serviceMonitor:
+            metricRelabelings:
+              - action: drop
+                regex: (etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\.15|0\.2|0\.3|0\.35|0\.4|0\.45|0\.6|0\.7|0\.8|0\.9|1\.25|1\.5|1\.75|2|3|3\.5|4|4\.5|6|7|8|9|15|20|40|45|50)(\.0)?
+                sourceLabels: [__name__, le]
+              - action: drop
+                regex: "apiserver_request_duration_seconds_bucket|apiserver_request_body_size_bytes_bucket|apiserver_response_sizes_bucket|apiserver_watch_cache_read_wait_seconds_bucket|apiserver_watch_list_duration_seconds_bucket|apiserver_watch_events_sizes_bucket|etcd_request_duration_seconds_bucket"
+                sourceLabels: [__name__]
+
         prometheus:
           prometheusSpec:
             # Budget disque < 10 Gi partage avec n8n / obsidian / authentik.
@@ -53,17 +68,17 @@ spec:
                       # ~1.5x le retentionSize : le cap ne couvre ni le WAL ni les
                       # blocs en cours de compaction.
                       storage: 3Gi
+            # Profil "a etat" : request = limit memoire, pas de limite CPU.
+            # Base : pic 996Mi / p95 CPU 276m sur 51h (2026-10-14), avant le drop
+            # des histogrammes apiserver ; a reajuster sur 7j d'historique.
+            # NB : l'ancien metricRelabelings pose ici etait ignore (champ
+            # inexistant dans prometheusSpec) ; le drop vit sous kubeApiServer.
             resources:
               requests:
-                cpu: 100m
-                memory: 512Mi
+                cpu: 300m
+                memory: 1280Mi
               limits:
-                memory: 1Gi
-            # Metriques a forte cardinalite, sans valeur sur un homelab.
-            metricRelabelings:
-              - sourceLabels: [__name__]
-                regex: "apiserver_request_duration_seconds_bucket|apiserver_response_sizes_bucket|container_network_tcp_usage_total|container_network_udp_usage_total|etcd_request_duration_seconds_bucket"
-                action: drop
+                memory: 1280Mi
 
         alertmanager:
           alertmanagerSpec:
