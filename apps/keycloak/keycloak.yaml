@@ -51,7 +51,7 @@ spec:
           enabled: true
         extraEnv: |
           - name: KC_HOSTNAME
-            value: https://auth.amonnier.fr
+            value: https://keycloak.amonnier.fr
           - name: KC_BOOTSTRAP_ADMIN_USERNAME
             value: admin
           - name: KC_BOOTSTRAP_ADMIN_PASSWORD
@@ -86,13 +86,13 @@ spec:
             traefik.ingress.kubernetes.io/router.tls: "true"
             traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt-prod
           rules:
-            - host: auth.amonnier.fr
+            - host: keycloak.amonnier.fr
               paths:
                 - path: /
                   pathType: Prefix
           tls:
             - hosts:
-                - auth.amonnier.fr
+                - keycloak.amonnier.fr
               secretName: keycloak-tls
   destination:
     server: "https://kubernetes.default.svc"
