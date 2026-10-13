@@ -1,0 +1,80 @@
+# Garde-fou : tout workload doit declarer resources.requests.cpu et
+# resources.requests.memory sur chacun de ses conteneurs (containers et
+# initContainers).
+#
+# La policy vise les workloads (Deployment, StatefulSet, DaemonSet, CronJob,
+# Job) et non les Pods : les LimitRange "defaults" des namespaces applicatifs
+# mutent les Pods (requests par defaut) avant la phase de validation, une
+# regle sur les Pods serait donc toujours satisfaite et ne revelerait rien.
+#
+# Mode actuel : Warn + Audit (avertissement kubectl / ArgoCD + annotation
+# d'audit), rien n'est bloque. failurePolicy Ignore : une erreur d'evaluation
+# CEL ne bloque jamais un deploiement.
+# Passer validationActions a [Deny, Audit] quand le parc est conforme.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-resources-requests
+spec:
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["cronjobs", "jobs"]
+  variables:
+    - name: podSpec
+      expression: >-
+        object.kind == 'CronJob'
+        ? object.spec.jobTemplate.spec.template.spec
+        : object.spec.template.spec
+    - name: allContainers
+      expression: >-
+        variables.podSpec.containers
+        + (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers : [])
+    - name: missingRequests
+      expression: >-
+        variables.allContainers.filter(c,
+          !has(c.resources) || !has(c.resources.requests)
+          || !('cpu' in c.resources.requests)
+          || !('memory' in c.resources.requests)
+        ).map(c, c.name)
+  validations:
+    - expression: "size(variables.missingRequests) == 0"
+      messageExpression: >-
+        object.kind + ' ' + object.metadata.namespace + '/' + object.metadata.name
+        + ' : resources.requests.cpu et/ou resources.requests.memory absents sur le(s) conteneur(s) '
+        + variables.missingRequests.join(', ')
+        + ' (declarer des requests explicites ; ce sera bloquant au passage en Deny)'
+      reason: Invalid
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-resources-requests
+spec:
+  policyName: require-resources-requests
+  validationActions: [Warn, Audit]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - kube-public
+            - kube-node-lease
+            - cilium-secrets
+            - longhorn-system
+            - monitoring
+            - falco
+            - trivy-system
+            - argocd
+            - external-secrets
+            - traefik-external
+            - security
