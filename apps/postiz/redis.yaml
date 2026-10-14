@@ -44,7 +44,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: redis
-          image: redis:7.2
+          image: redis:7.4.11
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
