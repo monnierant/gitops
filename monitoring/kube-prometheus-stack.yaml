@@ -150,6 +150,13 @@ spec:
                 memory: 96Mi
               limits:
                 memory: 144Mi
+            # Range les dashboards dans un dossier Grafana selon l'annotation
+            # grafana_dashboard_folder de leur ConfigMap (nom par defaut des
+            # charts Falco). Sans annotation, le dashboard reste a la racine.
+            dashboards:
+              folderAnnotation: grafana_dashboard_folder
+              provider:
+                foldersFromFilesStructure: true
 
         prometheus-node-exporter:
           resources:
