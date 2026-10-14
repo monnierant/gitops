@@ -18,10 +18,21 @@
   "kubernetes": {
     "enabled": true,
     "managerFilePatterns": [
-      "//\\.ya?ml$//"
+      "/\\.ya?ml$/"
     ]
   },
   "packageRules": [
+    {
+      "description": "Lot 8 : epingler les images des manifests bruts par digest (tag@sha256). Les helm-values sont exclus, tous les charts ne gerent pas un digest colle au tag.",
+      "matchManagers": [
+        "kubernetes",
+        "dockerfile"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true
+    },
     {
       "description": "Longhorn n'accepte qu'un saut de minor a la fois (1.9 -> 1.10 -> 1.11 -> 1.12). Un bump direct fait echouer longhorn-manager au demarrage, ce qui coupe le CSI et bloque tous les pods a PVC. separateMultipleMinor ouvre une PR par minor au lieu de sauter a la derniere version.",
       "matchDatasources": [
