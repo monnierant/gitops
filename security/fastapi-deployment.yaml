@@ -13,6 +13,18 @@ spec:
       labels:
         app: apikey-auth
     spec:
+      # Pod Security "restricted" (lot 6b). L'image tiangolo ne declare pas de
+      # USER : on la fait tourner en nobody (65534). Gunicorn n'ecrit que dans
+      # /dev/shm (worker_tmp_dir de /gunicorn_conf.py) et journalise sur
+      # stdout. Le port 80 reste ouvert a un uid non root : containerd 2 pose
+      # net.ipv4.ip_unprivileged_port_start=0 dans le pod.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: app
           image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
@@ -26,6 +38,11 @@ spec:
                   key: KEYSETS_JSON
           ports:
             - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           # Profil "web/standard" : request = p95, limite memoire =
           # max(1,5 x request, 1,2 x max), pas de limite CPU.
           # Base : p95 27m / 501Mi, max 503Mi sur 51h, 2026-10-14.
