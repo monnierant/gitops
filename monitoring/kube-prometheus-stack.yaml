@@ -51,7 +51,7 @@ spec:
 
         prometheus:
           prometheusSpec:
-            # Budget disque < 10 Gi partage avec n8n / obsidian.
+            # Budget disque < 10 Gi partage avec n8n.
             scrapeInterval: 60s
             evaluationInterval: 60s
             retention: 7d
@@ -114,8 +114,8 @@ spec:
             server:
               domain: grafana.amonnier.fr
               root_url: https://grafana.amonnier.fr
-          # Convention du repo : classe via annotation (cf. apps/obsidian,
-          # apps/n8n, apps/mcp), entrypoint websecure et certresolver
+          # Convention du repo : classe via annotation (cf. apps/n8n, apps/mcp),
+          # entrypoint websecure et certresolver
           # letsencrypt-prod declares dans infra-with-secrets/traefik.yaml.
           ingress:
             enabled: true
