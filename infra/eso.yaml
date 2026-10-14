@@ -15,6 +15,12 @@ spec:
       # l'annotation last-applied-configuration posee par l'apply client-side.
       # Le server-side apply ne l'utilise pas.
       - ServerSideApply=true
+    managedNamespaceMetadata:
+      labels:
+        # Pod Security Admission : baseline applique, restricted en avertissement/audit.
+        pod-security.kubernetes.io/enforce: baseline
+        pod-security.kubernetes.io/warn: restricted
+        pod-security.kubernetes.io/audit: restricted
   source:
     chart: external-secrets
     repoURL: https://charts.external-secrets.io
