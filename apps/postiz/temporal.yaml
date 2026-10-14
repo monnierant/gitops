@@ -64,7 +64,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: temporal
-          image: temporalio/auto-setup:1.28.1
+          image: temporalio/auto-setup:1.29.7
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
