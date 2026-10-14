@@ -58,7 +58,7 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: postiz
-          image: ghcr.io/gitroomhq/postiz-app:v2.24.0
+          image: ghcr.io/gitroomhq/postiz-app:v2.25.1@sha256:d2b37802e96757729fdea2d3d71287f841c2b619faa1cb4c21dac07df657fde1
           # Chaque cle du Secret `postiz-providers` (JSON GCPSM
           # `k8s1-postiz-providers`) devient une variable d'environnement :
           # ajouter un provider = ajouter ses cles au JSON, rien a toucher ici.
