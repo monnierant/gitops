@@ -1,3 +1,7 @@
+# Chart 10 : NetworkPolicies (ingress seulement) creees par defaut ; explicite ici.
+global:
+  networkPolicy:
+    create: true
 repoServer:
   serviceAccount:
     name: argocd-repo-server
@@ -53,7 +57,7 @@ repoServer:
 
     - name: avp-all
       command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v3.5.0
+      image: "quay.io/argoproj/argocd:{{ .Chart.AppVersion }}"
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
@@ -78,7 +82,7 @@ repoServer:
 
     - name: avp-helm
       command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v3.5.0
+      image: "quay.io/argoproj/argocd:{{ .Chart.AppVersion }}"
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
