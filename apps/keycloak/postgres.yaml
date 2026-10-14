@@ -27,9 +27,22 @@ spec:
       labels:
         app: keycloak-postgres
     spec:
+      # Pod Security "restricted" : uid/gid postgres de l'image (999), deja
+      # proprietaire de PGDATA. Pas de fsGroup : aucun chown du volume.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: docker.io/library/postgres:17.6
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: POSTGRES_DB
               value: keycloak

@@ -14,15 +14,24 @@ spec:
       labels:
         app: n8n
     spec:
+      # Pod Security "restricted". OnRootMismatch : la racine du volume est
+      # deja en groupe 1000 (2775), le chown recursif a chaque demarrage est inutile.
       securityContext:
         fsGroup: 1000
-        fsGroupChangePolicy: Always
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: n8n
           image: docker.n8n.io/n8nio/n8n:2.34.4
           securityContext:
             runAsUser: 1000
             runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: PUID
               value: "1000"
