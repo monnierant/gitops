@@ -29,6 +29,14 @@ spec:
       labels:
         app: postgres
     spec:
+      # Pod Security "restricted" : uid/gid postgres de l'image alpine (70),
+      # deja proprietaire de PGDATA. Pas de fsGroup : aucun chown du volume.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       # Toute la stack postiz reste hors des control-planes (voir postiz.yaml).
       affinity:
         nodeAffinity:
@@ -40,6 +48,11 @@ spec:
       containers:
         - name: postgres
           image: postgres:17-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: POSTGRES_USER
               value: postiz

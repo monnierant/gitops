@@ -20,7 +20,7 @@ spec:
       - CreateNamespace=true
     managedNamespaceMetadata:
       labels:
-        # Pod Security Admission : baseline applique, restricted en avertissement/audit.
-        pod-security.kubernetes.io/enforce: baseline
+        # Pod Security Admission : restricted applique (lot 6b, vague 2).
+        pod-security.kubernetes.io/enforce: restricted
         pod-security.kubernetes.io/warn: restricted
         pod-security.kubernetes.io/audit: restricted

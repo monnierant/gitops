@@ -13,9 +13,22 @@ spec:
       labels:
         app: redis
     spec:
+      # Pod Security "restricted" : uid/gid redis de l'image (999), proprietaire
+      # de /data. Lance directement en 999, l'entrypoint saute le chown/gosu.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
           image: redis:8.10.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           args:
             - "redis-server"
             - "--appendonly"

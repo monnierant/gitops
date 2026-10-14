@@ -41,6 +41,35 @@ spec:
           resources:
             limits:
               cpu: null
+          # Pod Security "restricted" : complete le defaut du chart
+          # (uid/gid 1000, runAsNonRoot, allowPrivilegeEscalation false).
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+        # Pod Security "restricted". L'image Keycloak tourne en uid 1000 ;
+        # fsGroup 1000 est le defaut du chart (aucun volume persistant).
+        podSecurityContext:
+          fsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         extraEnv: |
           - name: KC_HOSTNAME
             value: https://keycloak.amonnier.fr

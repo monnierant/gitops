@@ -26,6 +26,14 @@ spec:
       labels:
         app: redis
     spec:
+      # Pod Security "restricted" : uid/gid redis de l'image (999), deja
+      # proprietaire de /data. Pas de fsGroup : aucun chown du volume.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       # Toute la stack postiz reste hors des control-planes (voir postiz.yaml).
       affinity:
         nodeAffinity:
@@ -37,6 +45,11 @@ spec:
       containers:
         - name: redis
           image: redis:7.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           # Redis porte les files BullMQ de Postiz (publications programmees) :
           # l'AOF evite de perdre les jobs en attente au redemarrage du pod.
           args:
