@@ -1,0 +1,66 @@
+# Socle reseau commun (lot 7) : CiliumClusterwideNetworkPolicy "baseline".
+#
+# Opt-in : la policy ne selectionne que les pods des namespaces portant le
+# label network-policy.amonnier.fr/baseline=enabled. Sans ce label elle est
+# inerte ; un namespace qui le recoit passe en default-deny dans les deux sens
+# pour tout ce qui n'est pas autorise ci-dessous ou par ses propres policies.
+#
+# Autorise :
+#   - entree depuis Traefik (namespace traefik-external) ;
+#   - entree depuis le noeud (sondes kubelet ; deja implicite avec
+#     allow-localhost, rendu explicite ici) ;
+#   - sortie vers kube-dns sur 53 UDP/TCP ;
+#   - sortie vers Internet public sur TCP 80 et 443 uniquement (plages privees,
+#     CGNAT et link-local exclues). Pas d'acces a l'API Kubernetes.
+#
+# Cilium fait l'union des autorisations de toutes les policies qui
+# selectionnent un pod : ce socle s'ajoute a tout le reste et ne peut rien
+# retirer. Il doit donc rester etroit (80/443 seulement vers Internet).
+#
+# Le trafic intra-namespace ne s'exprime pas dans une policy clusterwide, et
+# les exceptions vers le LAN sont propres a chaque application : les deux vont
+# dans des CiliumNetworkPolicy par namespace.
+#
+# Cluster IPv4 uniquement (pas d'adresse IPv6 sur les pods) : pas de regle ::/0.
+#
+# Rollback : retirer le label du namespace concerne (la policy redevient inerte
+# pour lui, sous reserve de ses CiliumNetworkPolicy propres).
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: baseline
+spec:
+  endpointSelector:
+    matchLabels:
+      "k8s:io.cilium.k8s.namespace.labels.network-policy.amonnier.fr/baseline": "enabled"
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-external
+    - fromEntities:
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+            - 100.64.0.0/10
+            - 169.254.0.0/16
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
