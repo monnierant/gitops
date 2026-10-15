@@ -52,6 +52,21 @@ spec:
             guaranteedInstanceManagerCPU:
               v1: "1"
               v2: "31"
+          # Cible des backups (ADR 0002) : partage NFS dedie du NAS, export
+          # restreint a 192.168.1.17 (connecteur Twingate, seule IP vue par le
+          # NAS) avec "insecure" (Twingate NAT le port source -> EPERM sinon)
+          # et en sync (un backup ne doit pas etre ack avant d'etre sur disque).
+          # Les volumes n'y entrent que par opt-in : cf. RecurringJobs du
+          # groupe "critique" dans post-install-cr/.
+          defaultBackupStore:
+            backupTarget: nfs://192.168.1.19:/Volume1/Backups/Longhorn
+            pollInterval: 300
+          metrics:
+            serviceMonitor:
+              enabled: true
+              # Selecteur par defaut de kube-prometheus-stack.
+              additionalLabels:
+                release: kube-prometheus-stack
           persistence:
             defaultClass: true
             # Retain : une PVC supprimee par erreur (prune Argo, manip) laisse

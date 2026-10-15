@@ -1,0 +1,98 @@
+# Supervision des backups Longhorn (ADR 0002) -> Alertmanager -> Discord.
+#
+# Pas de metrique de disponibilite du backup target : un NAS injoignable
+# (export modifie, connecteur Twingate change d'IP, EPERM...) se voit par des
+# backups en Error, puis par des backups trop vieux.
+#
+# L'AlertmanagerConfig n'attrape que les alertes portant
+# namespace="longhorn-system" (strategie OnNamespace de l'operator) : les
+# regles le posent explicitement.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn-backups
+  namespace: longhorn-system
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: longhorn-backups
+      rules:
+        - alert: LonghornBackupStale
+          # longhorn_volume_last_backup_at vaut 0 tant qu'aucun backup n'a
+          # reussi : seuls les volumes deja sauvegardes une fois (donc du
+          # groupe "critique") sont surveilles. Le premier backup d'un volume
+          # nouvellement labellise se verifie a la main.
+          # 26 h = backup quotidien de 03:00 + 2 h de marge.
+          expr: |
+            longhorn_volume_last_backup_at > 0
+            and (time() - longhorn_volume_last_backup_at) > 26 * 3600
+          for: 30m
+          labels:
+            namespace: longhorn-system
+            severity: warning
+          annotations:
+            summary: >-
+              Pas de backup reussi depuis
+              {{ $value | humanizeDuration }} pour
+              {{ $labels.pvc_namespace }}/{{ $labels.pvc }}
+            description: >-
+              Verifier le backup target :
+              kubectl -n longhorn-system get backuptargets.longhorn.io
+        - alert: LonghornBackupFailed
+          expr: longhorn_backup_state == 4
+          for: 15m
+          labels:
+            namespace: longhorn-system
+            severity: warning
+          annotations:
+            summary: >-
+              Backup {{ $labels.backup }} en erreur
+              (volume {{ $labels.volume }}, job {{ $labels.recurring_job }})
+            description: >-
+              Detail : kubectl -n longhorn-system get backups.longhorn.io
+              {{ $labels.backup }} -o yaml
+---
+# Meme webhook que les alertes de securite (canal Discord du cluster).
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: alertmanager-discord
+  namespace: longhorn-system
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: external-secrets
+  target:
+    name: alertmanager-discord
+    creationPolicy: Owner
+  data:
+    - secretKey: webhook-url
+      remoteRef:
+        key: k8s1-security-discord
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: longhorn-backups-discord
+  namespace: longhorn-system
+spec:
+  route:
+    receiver: discord
+    matchers:
+      - name: alertname
+        value: LonghornBackup(Stale|Failed)
+        matchType: "=~"
+    groupBy: [alertname]
+    groupWait: 5m
+    groupInterval: 1h
+    # Rappel quotidien tant que ce n'est pas corrige.
+    repeatInterval: 24h
+  receivers:
+    - name: discord
+      discordConfigs:
+        - apiURL:
+            name: alertmanager-discord
+            key: webhook-url
+          sendResolved: true
