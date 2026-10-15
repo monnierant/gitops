@@ -1,0 +1,19 @@
+# Restauration declarative des backups Longhorn (ADR 0002) : une
+# VolumeSnapshotContent pointant vers un backup existant, une VolumeSnapshot,
+# puis une PVC avec dataSource.
+#
+# deletionPolicy Retain : supprimer la VolumeSnapshot (prune Argo, menage
+# apres une restauration) ne doit JAMAIS supprimer le backup sur le NAS.
+#
+# Le CRD vient de l'Application snapshot-controller ; SkipDryRun evite
+# que la sync echoue tant qu'il n'est pas encore installe.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: longhorn-backup
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+driver: driver.longhorn.io
+deletionPolicy: Retain
+parameters:
+  type: bak

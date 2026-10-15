@@ -1,0 +1,27 @@
+# PVC creee par le volumeClaimTemplates de postgres, reprise ici pour
+# porter les labels de sauvegarde (ADR 0002). Le volumeClaimTemplates est
+# immuable sur un StatefulSet existant : y ajouter les labels ferait echouer
+# la synchro, et ne toucherait de toute facon pas la PVC deja creee.
+#
+# Le spec reprend celui de la PVC live a l'identique (volumeName est laisse
+# a Kubernetes). Prune=false : retirer ce fichier ne doit jamais supprimer
+# la base.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-postgres-0
+  namespace: postiz
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+  labels:
+    app: postgres
+    # Sauvegarde Longhorn, groupe critique (ADR 0002)
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/critique: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

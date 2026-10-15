@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: postiz-uploads
   namespace: postiz
+  labels:
+    # Sauvegarde Longhorn, groupe critique (ADR 0002)
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/critique: enabled
 spec:
   accessModes:
     - ReadWriteOnce

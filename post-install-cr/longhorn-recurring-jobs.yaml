@@ -1,0 +1,54 @@
+# Politique de sauvegarde du groupe "critique" (ADR 0002).
+#
+# Opt-in : un volume n'est concerne que si sa PVC porte
+#   recurring-job.longhorn.io/source: enabled
+#   recurring-job-group.longhorn.io/critique: enabled
+# Le groupe "default" de Longhorn (applique implicitement a tout volume sans
+# label) n'est volontairement pas utilise.
+#
+# La retention est comptee par job : les 7 quotidiens et les 4 hebdos
+# coexistent sans se purger mutuellement.
+#
+# Un volume detache (appli scalee a 0) est saute : le setting
+# allowRecurringJobWhileVolumeDetached reste a false.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: critique-snapshot
+  namespace: longhorn-system
+spec:
+  # Snapshot local seulement : annule une erreur faite dans l'UI, mais
+  # disparait avec le disque (volumes a une seule replique).
+  task: snapshot
+  cron: "0 */6 * * *"
+  retain: 4
+  concurrency: 2
+  groups:
+    - critique
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: critique-backup-daily
+  namespace: longhorn-system
+spec:
+  task: backup
+  cron: "0 3 * * *"
+  retain: 7
+  concurrency: 2
+  groups:
+    - critique
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: critique-backup-weekly
+  namespace: longhorn-system
+spec:
+  # Decale d'une heure pour ne pas tomber sur le quotidien du dimanche.
+  task: backup
+  cron: "0 4 * * 0"
+  retain: 4
+  concurrency: 2
+  groups:
+    - critique

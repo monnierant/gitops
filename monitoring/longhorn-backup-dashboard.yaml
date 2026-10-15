@@ -1,0 +1,106 @@
+# Dashboard Grafana des backups Longhorn (ADR 0002). Ecrit a la main : les
+# dashboards Longhorn communautaires ne couvrent pas les backups.
+# Requetes via la variable $datasource, compatible provisioning par sidecar.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: longhorn-backup-grafana-dashboard
+  namespace: monitoring
+  annotations:
+    # Dossier Grafana (folderAnnotation du sidecar, cf. kube-prometheus-stack.yaml).
+    grafana_dashboard_folder: Securite
+  labels:
+    # Label surveille par le sidecar Grafana de kube-prometheus-stack.
+    grafana_dashboard: "1"
+data:
+  longhorn-backups.json: |
+    {
+      "title": "Longhorn - Sauvegardes",
+      "uid": "longhorn-backups",
+      "tags": ["longhorn", "backup"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "refresh": "5m",
+      "time": {"from": "now-7d", "to": "now"},
+      "templating": {
+        "list": [
+          {"name": "datasource", "type": "datasource", "query": "prometheus", "label": "Source"}
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Volumes sauvegardes",
+          "description": "Volumes ayant au moins un backup reussi (groupe critique).",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "expr": "count(longhorn_volume_last_backup_at > 0) or vector(0)"}],
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+        },
+        {
+          "id": 2, "type": "stat", "title": "Backup le plus ancien",
+          "description": "Age du dernier backup reussi du volume le plus en retard. Alerte au-dela de 26 h.",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "expr": "max(time() - (longhorn_volume_last_backup_at > 0))"}],
+          "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null}, {"color": "orange", "value": 93600}, {"color": "red", "value": 172800}
+          ]}}},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"}
+        },
+        {
+          "id": 3, "type": "stat", "title": "Backups en erreur",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "expr": "count(longhorn_backup_state == 4) or vector(0)"}],
+          "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null}, {"color": "red", "value": 1}
+          ]}}},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"}
+        },
+        {
+          "id": 4, "type": "stat", "title": "Volumes sur la cible",
+          "description": "Backup volumes presents sur le NAS (y compris ceux de volumes supprimes).",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "expr": "max(longhorn_backup_target_backup_volume_count)"}],
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}
+        },
+        {
+          "id": 5, "type": "table", "title": "Dernier backup par PVC",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 10},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "format": "table", "instant": true,
+            "expr": "max by (pvc_namespace, pvc, volume) (time() - (longhorn_volume_last_backup_at > 0))"}],
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": [
+            {"matcher": {"id": "byName", "options": "Value"}, "properties": [
+              {"id": "displayName", "value": "Age"},
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "thresholds", "value": {"mode": "absolute", "steps": [
+                {"color": "green", "value": null}, {"color": "orange", "value": 93600}, {"color": "red", "value": 172800}
+              ]}}
+            ]}
+          ]},
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true}}}],
+          "options": {"sortBy": [{"displayName": "Age", "desc": true}]}
+        },
+        {
+          "id": 6, "type": "bargauge", "title": "Espace des backups par volume",
+          "description": "Somme des tailles reelles des backups conserves.",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 10},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "instant": true, "legendFormat": "{{volume}}",
+            "expr": "sort_desc(sum by (volume) (max by (volume, backup) (longhorn_backup_actual_size_bytes)))"}],
+          "fieldConfig": {"defaults": {"unit": "bytes"}},
+          "options": {"orientation": "horizontal", "displayMode": "basic"}
+        },
+        {
+          "id": 7, "type": "timeseries", "title": "Snapshots locaux par volume",
+          "description": "Espace pris par les snapshots sur le disque du noeud (a surveiller sur tal04-w/tal05-w).",
+          "gridPos": {"x": 0, "y": 14, "w": 24, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [{"refId": "A", "legendFormat": "{{volume}}",
+            "expr": "sum by (volume) (longhorn_snapshot_actual_size_bytes)"}],
+          "fieldConfig": {"defaults": {"unit": "bytes"}}
+        }
+      ]
+    }

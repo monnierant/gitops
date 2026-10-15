@@ -1,0 +1,33 @@
+# CRDs VolumeSnapshot* et snapshot-controller (ADR 0002). Longhorn ne livre
+# que le sidecar csi-snapshotter : sans ce controleur, aucune VolumeSnapshot
+# n'est traitee. Brique reutilisee par le plugin CSI de Velero (phase 2).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: snapshot-controller
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      # Les CRDs depassent la limite d'annotation du client-side apply.
+      - ServerSideApply=true
+  source:
+    chart: snapshot-controller
+    repoURL: https://piraeus.io/helm-charts/
+    targetRevision: 5.4.0
+    helm:
+      values: |
+        controller:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
