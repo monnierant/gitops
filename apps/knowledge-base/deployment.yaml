@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: knowledge-base
-          image: monnierant/knowledge-base:1.1.1
+          image: monnierant/knowledge-base:1.1.1@sha256:0a5977440ef4f20e42165018161544fdb406bbb4ce67ff022f90187f6a16f8da
           ports:
             - containerPort: 80
           # Profil "web/standard" : request = p95, limite memoire =
