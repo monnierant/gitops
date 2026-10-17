@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: n8n
-          image: docker.n8n.io/n8nio/n8n:2.34.4
+          image: docker.n8n.io/n8nio/n8n:2.44.3@sha256:5032941f437e1daa421cad0cc3ea57cd054f0d44a7256b38a0a3fca1b460834a
           securityContext:
             runAsUser: 1000
             runAsGroup: 0
