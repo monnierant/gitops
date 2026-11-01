@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns-chart
+  namespace: argocd
+spec:
+  project: infra
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+  source:
+    chart: external-dns
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    targetRevision: 1.23.0
+    helm:
+      releaseName: external-dns
+      values: |
+        provider:
+          name: ovh
+        sources:
+          - ingress
+        domainFilters:
+          - amonnier.fr
+        # upsert-only : cree et met a jour, ne supprime jamais. Un Ingress retire
+        # laisse son enregistrement en place, a nettoyer a la main dans la zone OVH.
+        policy: upsert-only
+        # Le registre TXT marque chaque enregistrement gere (TXT "cname-<nom>") :
+        # external-dns ne touche jamais un enregistrement cree a la main.
+        registry: txt
+        txtOwnerId: k8s1
+        extraArgs:
+          # Tous les hosts pointent en CNAME vers k8s1.amonnier.fr, gere a la main
+          # (A vers l'IP publique). Surchargeable par Ingress avec l'annotation
+          # external-dns.alpha.kubernetes.io/target.
+          - --default-targets=k8s1.amonnier.fr
+        env:
+          - name: OVH_APPLICATION_KEY
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-ovh
+                key: OVH_APPLICATION_KEY
+          - name: OVH_APPLICATION_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-ovh
+                key: OVH_APPLICATION_SECRET
+          - name: OVH_CONSUMER_KEY
+            valueFrom:
+              secretKeyRef:
+                name: external-dns-ovh
+                key: OVH_CONSUMER_KEY
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: external-dns
