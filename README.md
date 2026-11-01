@@ -158,6 +158,7 @@ EOF
 | `infra/external-repos.yaml` → [external-repos/](external-repos/)            | `external-repos`    | Branche les repos privés `private-gitops` et `staging-gitops` (clés SSH)                                                                                         |
 | `infra/longhorn.yaml`                                                       | `longhorn`          | Storage                                                                                                                                                          |
 | `infra/metrics-server.yaml`                                                 | `metrics-server`    | Métriques instantanées (`kubectl top`, HPA). `--kubelet-insecure-tls` requis sur Talos                                                                           |
+| `infra/external-dns.yaml` → [external-dns/](external-dns/)                | `external-dns`      | Crée les enregistrements DNS OVH des Ingress `*.amonnier.fr`, en CNAME vers `k8s1.amonnier.fr` (`upsert-only`, ne supprime jamais)                          |
 | `infra/monitoring.yaml` → [monitoring/](monitoring/)                        | `monitoring`        | Métriques historisées : kube-prometheus-stack bridé + Grafana. Cf. [ADR 0001](docs/adr/0001-metriques-historisees-sous-contrainte-disque.md)                     |
 | `infra/smbc-driver.yaml`                                                    | `csi-smb`           | CSI SMB                                                                                                                                                          |
 | `infra/traefic-rbac.yaml` + `infra/argo-ingress.yaml`                       | (RBAC + Ingress)    | RBAC Traefik + dashboard Argo CD sur `argocd.amonnier.fr` (Application `traefik` créée par `bootstrap-secrets`)                                                  |
@@ -175,6 +176,7 @@ Les secrets suivants doivent exister dans GCP Secret Manager (projet `amonnier`)
 | `k8s1-github-private-gitops-deploy` | Deploy key SSH (clé privée) du repo `monnierant/private-gitops`                                                                                                                                         |
 | `k8s1-github-staging-gitops-deploy` | Deploy key SSH (clé privée) du repo `MonniHermes/staging-gitops`, **en écriture** : l'Image Updater y pousse ses write-back Kustomize                                                                   |
 | `k8s1-grafana`                      | JSON `{"admin-user": "...", "admin-password": "..."}` — consommé via `admin.existingSecret` par [monitoring/kube-prometheus-stack.yaml](monitoring/kube-prometheus-stack.yaml), sans passer par AVP     |
+| `k8s1-ovh-external-dns`             | JSON `{"OVH_APPLICATION_KEY": "...", "OVH_APPLICATION_SECRET": "...", "OVH_CONSUMER_KEY": "..."}` — identifiants API OVH limités à la zone `amonnier.fr`, consommés par [external-dns/](external-dns/)        |
 
 Côté Kubernetes (créés par ESO) :
 
