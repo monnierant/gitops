@@ -29,11 +29,17 @@ spec:
         # external-dns ne touche jamais un enregistrement cree a la main.
         registry: txt
         txtOwnerId: k8s1
+        # Opt-in : seuls les Ingress annotes external-dns.alpha.kubernetes.io/enabled: "true"
+        # sont geres.
+        annotationFilter: external-dns.alpha.kubernetes.io/enabled=true
         extraArgs:
-          # Tous les hosts pointent en CNAME vers k8s1.amonnier.fr, gere a la main
-          # (A vers l'IP publique). Surchargeable par Ingress avec l'annotation
+          # Tous les hosts pointent en CNAME vers autodns.k8s1.amonnier.fr, gere a la
+          # main dans la zone OVH. Surchargeable par Ingress avec l'annotation
           # external-dns.alpha.kubernetes.io/target.
-          - --default-targets=k8s1.amonnier.fr
+          - --default-targets=autodns.k8s1.amonnier.fr
+          # Sans ce flag, l'IP publiee par Traefik dans le status de l'Ingress
+          # l'emporte sur --default-targets et external-dns cree des A, pas des CNAME.
+          - --force-default-targets
         env:
           - name: OVH_APPLICATION_KEY
             valueFrom:
