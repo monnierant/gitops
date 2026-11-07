@@ -64,6 +64,12 @@ spec:
                     operator: DoesNotExist
       containers:
         - name: temporal
+          # auto-setup est deprecie : 1.29.7 est le dernier tag publie (aucune
+          # 1.29.x plus recente, rien en 1.30+). Les CVE critiques remontees par
+          # Trivy (grpc 1.56.3, labstack/echo 4.13.4) viennent des binaires CLI
+          # embarques (tctl, temporal), pas de temporal-server, et ne sont pas
+          # executees par le script d'auto-setup. Correctif reel : passer a
+          # temporalio/server + migration de schema par temporalio/admin-tools.
           image: temporalio/auto-setup:1.29.7
           securityContext:
             allowPrivilegeEscalation: false
