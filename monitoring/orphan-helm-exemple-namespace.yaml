@@ -1,0 +1,15 @@
+# TEMPORAIRE - a retirer dans la PR suivante.
+#
+# Le namespace helm-exemple-external a ete cree par l'Application helm-exemple
+# (syncOptions CreateNamespace=true), supprimee par les PR #105/#108. Argo CD ne
+# supprime jamais un namespace cree via CreateNamespace : il est reste orphelin
+# (vide) sur k8s1.
+#
+# Ce manifeste fait adopter le namespace par l'Application "monitoring"
+# (prune: true, deja proprietaire du Namespace monitoring). La PR suivante retire
+# ce fichier : le prune automatique supprime alors le namespace.
+# Aucun autre namespace n'est concerne.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: helm-exemple-external
