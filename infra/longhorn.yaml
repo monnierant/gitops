@@ -16,7 +16,7 @@ spec:
       repoURL: https://charts.longhorn.io/
       # Longhorn n'autorise qu'un saut de minor a la fois : 1.9 -> 1.10 -> 1.11 -> 1.12.
       # Ne pas laisser Renovate bumper plusieurs minors d'un coup, le manager refuse de demarrer.
-      targetRevision: 1.12.0 # Replace with the Longhorn version you'd like to install or upgrade to
+      targetRevision: 1.12.1 # Replace with the Longhorn version you'd like to install or upgrade to
       helm:
         values: |
           # Garde-fou natif de Longhorn : valide le chemin d'upgrade AVANT de
@@ -26,6 +26,17 @@ spec:
           # echoue proprement et le stockage reste intact.
           preUpgradeChecker:
             jobEnabled: true
+          # 1.12.1 ajoute 6 NetworkPolicies internes actives par defaut
+          # (restrictInternalTraffic). Cilium les applique, or Talos + Cilium ne
+          # fait pas partie des combinaisons validees par Longhorn, et la policy
+          # longhorn-manager bloque le scrape Prometheus (namespace monitoring,
+          # port 9500) : les metriques longhorn_* disparaitraient et les alertes
+          # LonghornBackupStale/Failed se tairaient sans bruit. On garde le
+          # comportement 1.12.0 ; activation a traiter a part, avec une policy
+          # additive pour Prometheus (cf. doc Longhorn 1.12.1 "Internal Network
+          # Policies").
+          networkPolicies:
+            restrictInternalTraffic: false
           defaultSettings:
             defaultReplicaCount: 1
             # A 0 (defaut), les engines des volumes restent sur l'ancienne
