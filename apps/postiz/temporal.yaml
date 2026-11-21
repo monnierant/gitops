@@ -70,7 +70,7 @@ spec:
           # embarques (tctl, temporal), pas de temporal-server, et ne sont pas
           # executees par le script d'auto-setup. Correctif reel : passer a
           # temporalio/server + migration de schema par temporalio/admin-tools.
-          image: temporalio/auto-setup:1.29.7
+          image: temporalio/auto-setup:1.29.7@sha256:f14912b699cf73015ad5c4fc18d522d4b014db90e794039214dfb7c022c2644f
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
