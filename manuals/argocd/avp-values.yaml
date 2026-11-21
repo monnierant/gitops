@@ -15,7 +15,7 @@ repoServer:
       emptyDir: {}
   initContainers:
     - name: download-tools
-      image: registry.access.redhat.com/ubi8
+      image: registry.access.redhat.com/ubi8@sha256:31854d90b8a474b0253a2d4a1f71659097654d5992d6d8b811a679f4ff0084bc
       env:
         - name: AVP_VERSION
           value: 1.16.1
@@ -32,7 +32,7 @@ repoServer:
   extraContainers:
     - name: avp
       command: [/var/run/argocd/argocd-cmp-server]
-      image: registry.access.redhat.com/ubi8
+      image: registry.access.redhat.com/ubi8@sha256:31854d90b8a474b0253a2d4a1f71659097654d5992d6d8b811a679f4ff0084bc
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
@@ -57,7 +57,7 @@ repoServer:
 
     - name: avp-all
       command: [/var/run/argocd/argocd-cmp-server]
-      image: "quay.io/argoproj/argocd:{{ .Chart.AppVersion }}"
+      image: "quay.io/argoproj/argocd@sha256:5528c91b86745fb885ac7b8e7f075917c1ab3e47190d0ebfb00c4635c69483fd:{{ .Chart.AppVersion }}"
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret
@@ -82,7 +82,7 @@ repoServer:
 
     - name: avp-helm
       command: [/var/run/argocd/argocd-cmp-server]
-      image: "quay.io/argoproj/argocd:{{ .Chart.AppVersion }}"
+      image: "quay.io/argoproj/argocd@sha256:5528c91b86745fb885ac7b8e7f075917c1ab3e47190d0ebfb00c4635c69483fd:{{ .Chart.AppVersion }}"
       env:
         - name: ARGOCD_ENV_AVP_TYPE
           value: kubernetessecret

@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: app
-          image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
+          image: tiangolo/uvicorn-gunicorn-fastapi:python3.11@sha256:2bdacdc32c5fef7f0d076a87f999ef446189d4c5b22472fef5be2f850e368152
           env:
             - name: APP_MODULE
               value: "main:app" # <-- tell Gunicorn to import /app/main.py -> app
